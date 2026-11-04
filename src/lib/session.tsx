@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { nextProfile, shouldReloadProfile } from './profileState';
 import { supabase } from './supabase';
 import type { Profile } from './types';
 
@@ -23,8 +24,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       return;
     }
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-    setProfile((data as Profile | null) ?? null);
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+    setProfile((prev) => nextProfile(prev, { data: data as Profile | null, error }));
   }, []);
 
   useEffect(() => {
@@ -33,8 +34,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       await loadProfile(data.session?.user.id);
       setLoading(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
+      if (!shouldReloadProfile(event)) return;
       // defer: supabase calls inside this callback can deadlock the auth lock
       setTimeout(() => loadProfile(next?.user.id), 0);
     });

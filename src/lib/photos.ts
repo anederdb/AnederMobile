@@ -23,9 +23,11 @@ const EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', '
 
 /** Uploads under <owner id>/ (required by the storage policy) and returns the storage path. */
 export async function uploadListingPhoto(ownerId: string, image: PickedImage): Promise<string> {
-  const blob = await (await fetch(image.uri)).blob();
+  // Raw bytes, not a Blob: Blob uploads can silently store empty files on React Native.
+  const bytes = await (await fetch(image.uri)).arrayBuffer();
+  if (bytes.byteLength === 0) throw new Error('empty image');
   const path = `${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${EXT[image.mimeType] ?? 'jpg'}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: image.mimeType });
+  const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: image.mimeType });
   if (error) throw error;
   return path;
 }

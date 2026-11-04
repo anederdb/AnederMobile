@@ -233,3 +233,31 @@ begin
 
   raise exception 'LISTINGS TESTS PASSED';
 end $$;
+
+-- A member cannot attach another member's firm to a listing (insert or update).
+do $$
+declare
+  a_id uuid := gen_random_uuid();
+  b_id uuid := gen_random_uuid();
+  fa uuid; fb uuid; la uuid; n int;
+begin
+  insert into auth.users (id, email) values (a_id, 'a8@t.test'), (b_id, 'b8@t.test');
+  update public.profiles set status = 'approved' where id in (a_id, b_id);
+  insert into public.firms (owner_id, name) values (a_id, 'Firma A') returning id into fa;
+  insert into public.firms (owner_id, name) values (b_id, 'Firma B') returning id into fb;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', a_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into public.listings (owner_id, title, type, firm_id) values (a_id, 'own firm ok', 'satilik', fa) returning id into la;
+  begin
+    insert into public.listings (owner_id, title, type, firm_id) values (a_id, 'stolen firm', 'satilik', fb);
+    raise exception 'member attached someone elses firm on insert';
+  exception when insufficient_privilege then null; end;
+  begin
+    update public.listings set firm_id = fb where id = la;
+    raise exception 'member attached someone elses firm on update';
+  exception when insufficient_privilege then null; end;
+  reset role;
+
+  raise exception 'FIRM OWNERSHIP TESTS PASSED';
+end $$;
