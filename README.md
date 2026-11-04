@@ -28,3 +28,7 @@ Registration only runs on a real phone and needs a few one-time setup steps (it 
 2. Android: create a Firebase project, add the Android app, put `google-services.json` in the repo root, reference it as `android.googleServicesFile` in `app.json`, and upload the FCM credentials with `npx eas-cli credentials`.
 3. iOS: an Apple Developer account; `eas build` sets up the push key.
 4. Build a development or preview build (push does not work in Expo Go on Android) and check delivery by hand on a phone.
+
+## Releasing
+
+See `docs/RELEASING.md` for building test and production versions for Android and iOS with EAS.
