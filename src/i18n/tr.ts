@@ -136,6 +136,14 @@ export const tr = {
     maxPhotos: 'En fazla 8 fotoğraf eklenebilir.',
     sqm: 'm²',
   },
+  members: {
+    title: 'Üyeler',
+    search: 'Üye veya firma ara',
+    empty: 'Sonuç bulunamadı.',
+    firms: 'Firmalar',
+    listings: 'İlanları',
+    noListings: 'Henüz ilan yok.',
+  },
 } as const;
 
 export const t = tr;
