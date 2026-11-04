@@ -66,6 +66,20 @@ export default function Profile() {
       <Link href="/profil/firms" asChild>
         <Button title={t.profile.firms} variant="secondary" onPress={() => {}} />
       </Link>
+      {profile.role === 'admin' ? (
+        <>
+          <Text style={[type.title, { marginTop: space.md }]}>{t.admin.title}</Text>
+          <Link href="/admin/events" asChild>
+            <Button title={t.admin.events} variant="secondary" onPress={() => {}} />
+          </Link>
+          <Link href="/admin/announcements" asChild>
+            <Button title={t.admin.announcements} variant="secondary" onPress={() => {}} />
+          </Link>
+          <Link href="/admin/members" asChild>
+            <Button title={t.admin.members} variant="secondary" onPress={() => {}} />
+          </Link>
+        </>
+      ) : null}
       <View style={{ height: space.md }} />
       <Button title={t.auth.logout} variant="secondary" onPress={() => supabase.auth.signOut()} />
       <Button title={t.profile.deleteAccount} variant="danger" onPress={deleteAccount} />

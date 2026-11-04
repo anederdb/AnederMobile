@@ -1,0 +1,28 @@
+import * as ImagePicker from 'expo-image-picker';
+
+import { supabase } from './supabase';
+
+export type PickedImage = { uri: string; mimeType: string };
+
+export async function pickImage(): Promise<PickedImage | null> {
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsEditing: true,
+    aspect: [16, 9],
+    quality: 0.7,
+  });
+  if (result.canceled) return null;
+  const asset = result.assets[0];
+  return { uri: asset.uri, mimeType: asset.mimeType ?? 'image/jpeg' };
+}
+
+const EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+/** Uploads to the public `covers` bucket (admin-only write) and returns the public URL. */
+export async function uploadCover(image: PickedImage): Promise<string> {
+  const blob = await (await fetch(image.uri)).blob();
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${EXT[image.mimeType] ?? 'jpg'}`;
+  const { error } = await supabase.storage.from('covers').upload(path, blob, { contentType: image.mimeType });
+  if (error) throw error;
+  return supabase.storage.from('covers').getPublicUrl(path).data.publicUrl;
+}

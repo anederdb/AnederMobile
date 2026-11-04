@@ -16,3 +16,21 @@ export type Firm = {
   sahibinden_url: string | null;
   created_at: string;
 };
+
+export type AppEvent = {
+  id: string;
+  title: string;
+  description: string | null;
+  location: string | null;
+  starts_at: string;
+  cover_url: string | null;
+  created_at: string;
+};
+
+export type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  cover_url: string | null;
+  created_at: string;
+};

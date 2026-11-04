@@ -15,11 +15,13 @@ function Routes() {
 
   // Guarded routes have no fallback of their own, so send the user to the area
   // that matches their state whenever they are somewhere else (cold start, sign-out, approval).
+  const isAdmin = approved && profile?.role === 'admin';
   const group = !signedIn ? '(auth)' : approved ? '(tabs)' : 'pending';
   const target = !signedIn ? '/login' : approved ? '/' : '/pending';
+  const inAllowedArea = segments[0] === group || (isAdmin && segments[0] === 'admin');
   useEffect(() => {
-    if (!loading && segments[0] !== group) router.replace(target);
-  }, [loading, segments, group, target, router]);
+    if (!loading && !inAllowedArea) router.replace(target);
+  }, [loading, inAllowedArea, target, router]);
 
   if (loading) return null;
 
@@ -33,6 +35,9 @@ function Routes() {
       </Stack.Protected>
       <Stack.Protected guard={approved}>
         <Stack.Screen name="(tabs)" />
+      </Stack.Protected>
+      <Stack.Protected guard={isAdmin}>
+        <Stack.Screen name="admin" />
       </Stack.Protected>
     </Stack>
   );

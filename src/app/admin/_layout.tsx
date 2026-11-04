@@ -1,0 +1,20 @@
+import { Stack } from 'expo-router';
+
+import { t } from '@/i18n/tr';
+import { colors } from '@/theme';
+
+export default function AdminLayout() {
+  return (
+    <Stack
+      screenOptions={{
+        headerTintColor: colors.primary,
+        headerTitleStyle: { color: colors.ink },
+        headerStyle: { backgroundColor: colors.background },
+        headerBackButtonDisplayMode: 'minimal',
+      }}>
+      <Stack.Screen name="events" options={{ title: t.admin.events }} />
+      <Stack.Screen name="announcements" options={{ title: t.admin.announcements }} />
+      <Stack.Screen name="members" options={{ title: t.admin.members }} />
+    </Stack>
+  );
+}
