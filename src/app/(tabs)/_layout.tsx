@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { Platform } from 'react-native';
 
 import { t } from '@/i18n/tr';
 import { colors } from '@/theme';
@@ -22,7 +23,12 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.border },
+        tabBarStyle: {
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+          // web has no safe-area insets, so give the labels room; native sizes the bar itself
+          ...Platform.select({ web: { height: 68, paddingTop: 6, paddingBottom: 10 }, default: {} }),
+        },
       }}>
       {screens.map(({ name, title, icon }) => (
         <Tabs.Screen
