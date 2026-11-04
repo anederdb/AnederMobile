@@ -1,0 +1,69 @@
+-- RLS tests. Run with execute_sql (or psql). Everything rolls back: success is the
+-- exception message 'RLS TESTS PASSED'. Any other error is a failing test.
+do $$
+declare
+  admin_id uuid := gen_random_uuid();
+  pend_id  uuid := gen_random_uuid();
+  appr_id  uuid := gen_random_uuid();
+  n int;
+begin
+  insert into auth.users (id, email) values
+    (admin_id, 'admin@t.test'), (pend_id, 'pending@t.test'), (appr_id, 'approved@t.test');
+
+  -- trigger creates a pending member profile for every new user
+  select count(*) into n from public.profiles where id in (admin_id, pend_id, appr_id) and role = 'member' and status = 'pending';
+  assert n = 3, 'new users get pending member profiles';
+
+  update public.profiles set role = 'admin', status = 'approved' where id = admin_id;
+  update public.profiles set status = 'approved' where id = appr_id;
+  insert into public.firms (owner_id, name) values (appr_id, 'Firma A'), (pend_id, 'Firma P');
+
+  -- anonymous: nothing
+  set local role anon;
+  select count(*) into n from public.profiles; assert n = 0, 'anon sees no profiles';
+  select count(*) into n from public.firms;    assert n = 0, 'anon sees no firms';
+  reset role;
+
+  -- pending member: only self, no firms of others
+  perform set_config('request.jwt.claims', json_build_object('sub', pend_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.profiles where id <> pend_id; assert n = 0, 'pending sees no other profiles';
+  select count(*) into n from public.profiles where id = pend_id;  assert n = 1, 'pending sees self';
+  select count(*) into n from public.firms where owner_id <> pend_id; assert n = 0, 'pending sees no firms of others';
+  reset role;
+
+  -- approved member
+  perform set_config('request.jwt.claims', json_build_object('sub', appr_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.profiles where id = pend_id; assert n = 0, 'approved does not see pending profiles';
+  select count(*) into n from public.profiles where id in (admin_id, appr_id); assert n = 2, 'approved sees approved profiles';
+  select count(*) into n from public.firms; assert n = 1, 'approved sees firms of approved members only';
+  update public.profiles set full_name = 'Yeni Ad' where id = appr_id;
+  get diagnostics n = row_count; assert n = 1, 'member can edit own name';
+  begin
+    update public.profiles set role = 'admin' where id = appr_id;
+    raise exception 'member escalated to admin';
+  exception when insufficient_privilege then null; end;
+  update public.profiles set status = 'approved' where id = pend_id;
+  get diagnostics n = row_count; assert n = 0, 'member cannot approve someone else';
+  begin
+    insert into public.firms (owner_id, name, sahibinden_url) values (appr_id, 'Kotu', 'https://evil.com/sahibinden.com');
+    raise exception 'bad sahibinden url accepted';
+  exception when check_violation then null; end;
+  insert into public.firms (owner_id, name, sahibinden_url) values (appr_id, 'Iyi', 'https://www.sahibinden.com/magaza/iyi');
+  begin
+    insert into public.firms (owner_id, name) values (admin_id, 'Baskasi');
+    raise exception 'member inserted firm for another owner';
+  exception when insufficient_privilege then null; end;
+  reset role;
+
+  -- admin
+  perform set_config('request.jwt.claims', json_build_object('sub', admin_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.profiles; assert n = 3, 'admin sees all profiles';
+  update public.profiles set status = 'approved' where id = pend_id;
+  get diagnostics n = row_count; assert n = 1, 'admin can approve';
+  reset role;
+
+  raise exception 'RLS TESTS PASSED';
+end $$;
