@@ -1,0 +1,5 @@
+.superpowers/
+.env
+node_modules/
+.expo/
+dist/
