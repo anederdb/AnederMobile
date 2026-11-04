@@ -117,3 +117,56 @@ begin
 
   raise exception 'EVENTS TESTS PASSED';
 end $$;
+
+-- Push tokens: each user manages only their own.
+do $$
+declare
+  a_id uuid := gen_random_uuid();
+  b_id uuid := gen_random_uuid();
+  n int;
+begin
+  insert into auth.users (id, email) values (a_id, 'a3@t.test'), (b_id, 'b3@t.test');
+
+  perform set_config('request.jwt.claims', json_build_object('sub', a_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into public.push_tokens (user_id, token) values (a_id, 'ExponentPushToken[aaa]');
+  begin
+    insert into public.push_tokens (user_id, token) values (b_id, 'ExponentPushToken[bbb]');
+    raise exception 'user registered a token for someone else';
+  exception when insufficient_privilege then null; end;
+  reset role;
+
+  insert into public.push_tokens (user_id, token) values (b_id, 'ExponentPushToken[bbb]');
+
+  perform set_config('request.jwt.claims', json_build_object('sub', a_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.push_tokens; assert n = 1, 'user sees only own token';
+  reset role;
+
+  set local role anon;
+  select count(*) into n from public.push_tokens; assert n = 0, 'anon sees no tokens';
+  reset role;
+
+  raise exception 'PUSH TESTS PASSED';
+end $$;
+
+-- register_push_token moves a device token to the user who signed in last.
+do $$
+declare
+  a_id uuid := gen_random_uuid();
+  b_id uuid := gen_random_uuid();
+  owner uuid;
+begin
+  insert into auth.users (id, email) values (a_id, 'a4@t.test'), (b_id, 'b4@t.test');
+  perform set_config('request.jwt.claims', json_build_object('sub', a_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  perform public.register_push_token('ExponentPushToken[shared]');
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', b_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  perform public.register_push_token('ExponentPushToken[shared]');
+  reset role;
+  select user_id into owner from public.push_tokens where token = 'ExponentPushToken[shared]';
+  assert owner = b_id, 'token moves to the user who signed in last';
+  raise exception 'TOKEN MOVE PASSED';
+end $$;

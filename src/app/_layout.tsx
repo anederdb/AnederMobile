@@ -1,7 +1,10 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 
+import { eventIdFrom, registerForPush } from '@/lib/push';
 import { SessionProvider, useSession } from '@/lib/session';
 
 function Routes() {
@@ -22,6 +25,19 @@ function Routes() {
   useEffect(() => {
     if (!loading && !inAllowedArea) router.replace(target);
   }, [loading, inAllowedArea, target, router]);
+
+  useEffect(() => {
+    if (approved) registerForPush().catch(() => {});
+  }, [approved]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const id = eventIdFrom(response);
+      if (id) router.push({ pathname: '/etkinlikler/[id]', params: { id } });
+    });
+    return () => sub.remove();
+  }, [router]);
 
   if (loading) return null;
 

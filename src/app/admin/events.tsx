@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Switch, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { Button, ErrorText, Field } from '@/components/ui';
@@ -21,6 +21,7 @@ export default function ManageEvents() {
   const [date, setDate] = useState('');
   const [cover, setCover] = useState<string | null>(null);
   const [picked, setPicked] = useState<PickedImage | null>(null);
+  const [notify, setNotify] = useState(false);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -40,6 +41,7 @@ export default function ManageEvents() {
     setDate('');
     setCover(null);
     setPicked(null);
+    setNotify(false);
     setError('');
   }
 
@@ -74,10 +76,18 @@ export default function ManageEvents() {
       starts_at: startsAt,
       cover_url: coverUrl,
     };
-    const { error: err } = editing
-      ? await supabase.from('events').update(row).eq('id', editing.id)
-      : await supabase.from('events').insert(row);
-    if (err) return setError(t.common.error);
+    if (editing) {
+      const { error: err } = await supabase.from('events').update(row).eq('id', editing.id);
+      if (err) return setError(t.common.error);
+    } else {
+      const { data, error: err } = await supabase.from('events').insert(row).select('id').single();
+      if (err) return setError(t.common.error);
+      if (notify) {
+        await supabase.functions.invoke('send-push', {
+          body: { title: row.title, body: [date.trim(), row.location].filter(Boolean).join(' · '), eventId: data.id },
+        });
+      }
+    }
     reset();
     await load();
   }
@@ -141,6 +151,17 @@ export default function ManageEvents() {
         multiline
         style={{ minHeight: 96, textAlignVertical: 'top', paddingTop: space.sm }}
       />
+      {!editing ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md }}>
+          <Text style={[type.body, { flex: 1 }]}>{t.admin.notifyOnPublish}</Text>
+          <Switch
+            value={notify}
+            onValueChange={setNotify}
+            accessibilityLabel={t.admin.notifyOnPublish}
+            trackColor={{ true: colors.primary, false: colors.border }}
+          />
+        </View>
+      ) : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button title={editing ? t.admin.update : t.admin.create} onPress={submit} />
       {editing ? <Button title={t.common.cancel} variant="secondary" onPress={reset} /> : null}
