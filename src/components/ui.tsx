@@ -45,6 +45,26 @@ export function Button({
   );
 }
 
+export function Chip({ label, selected, onPress }: { label: string; selected?: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!selected }}
+      onPress={onPress}
+      style={{
+        minHeight: 40,
+        paddingHorizontal: space.md,
+        borderRadius: radius.pill,
+        borderWidth: 1,
+        borderColor: selected ? colors.primary : colors.border,
+        backgroundColor: selected ? colors.primary : colors.background,
+        justifyContent: 'center',
+      }}>
+      <Text style={{ color: selected ? colors.onPrimary : colors.ink, fontWeight: '600', fontSize: 14 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export function ErrorText({ children }: { children: string }) {
   return (
     <Text accessibilityRole="alert" style={[type.caption, { color: colors.danger, fontSize: 14 }]}>

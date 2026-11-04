@@ -170,3 +170,66 @@ begin
   assert owner = b_id, 'token moves to the user who signed in last';
   raise exception 'TOKEN MOVE PASSED';
 end $$;
+
+-- Listings: members-only, owner-managed; similar_listings scoring; Turkish-insensitive neighborhood key.
+do $$
+declare
+  o_id uuid := gen_random_uuid();   -- approved owner
+  m_id uuid := gen_random_uuid();   -- approved other member
+  p_id uuid := gen_random_uuid();   -- pending
+  l1 uuid; l2 uuid; l5 uuid;
+  n int; k text;
+begin
+  insert into auth.users (id, email) values (o_id, 'o5@t.test'), (m_id, 'm5@t.test'), (p_id, 'p5@t.test');
+  update public.profiles set status = 'approved' where id in (o_id, m_id);
+
+  insert into public.listings (owner_id, title, type, district, neighborhood, price, rooms, area_m2) values
+    (o_id, 'Incek villa', 'satilik', 'Gölbaşı', 'İncek', 10000000, '4+1', 200) returning id into l1;
+  insert into public.listings (owner_id, title, type, district, neighborhood, price, rooms, area_m2) values
+    (o_id, 'Incek daire', 'satilik', 'Gölbaşı', 'Incek', 9000000, '4+1', 190) returning id into l2;
+  insert into public.listings (owner_id, title, type, district, neighborhood, price, rooms, area_m2) values
+    (o_id, 'Eryaman daire', 'satilik', 'Etimesgut', 'Eryaman', 10000000, '3+1', 150),
+    (o_id, 'Incek kiralik', 'kiralik', 'Gölbaşı', 'İncek', 10000000, '4+1', 200);
+  insert into public.listings (owner_id, title, type, district) values
+    (o_id, 'Fiyatsiz', 'satilik', 'Gölbaşı') returning id into l5;
+
+  select neighborhood_norm into k from public.listings where id = l1;
+  assert k = 'incek', 'İncek is stored as incek';
+  select neighborhood_norm into k from public.listings where id = l2;
+  assert k = 'incek', 'Incek is stored as incek';
+
+  -- pending sees nothing and cannot post
+  perform set_config('request.jwt.claims', json_build_object('sub', p_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.listings; assert n = 0, 'pending sees no listings';
+  begin
+    insert into public.listings (owner_id, title, type) values (p_id, 'x', 'satilik');
+    raise exception 'pending member posted a listing';
+  exception when insufficient_privilege then null; end;
+  reset role;
+
+  -- approved member: sees all, similar works, cannot post for or edit someone else
+  perform set_config('request.jwt.claims', json_build_object('sub', m_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.listings; assert n = 5, 'member sees all listings';
+  select count(*) into n from public.similar_listings(l1);
+  assert n = 1, 'only the Incek 9M listing is similar to the Incek 10M one';
+  select count(*) into n from public.similar_listings(l1) where id = l2; assert n = 1, 'similar is the 9M Incek listing';
+  select count(*) into n from public.similar_listings(l5); assert n = 0, 'listing without price/rooms/area has no similar ones';
+  begin
+    insert into public.listings (owner_id, title, type) values (o_id, 'sahte', 'satilik');
+    raise exception 'member posted for another owner';
+  exception when insufficient_privilege then null; end;
+  update public.listings set title = 'Hack' where id = l1;
+  get diagnostics n = row_count; assert n = 0, 'member cannot edit someone elses listing';
+  reset role;
+
+  -- owner edits own
+  perform set_config('request.jwt.claims', json_build_object('sub', o_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  update public.listings set title = 'Incek villa 2' where id = l1;
+  get diagnostics n = row_count; assert n = 1, 'owner edits own listing';
+  reset role;
+
+  raise exception 'LISTINGS TESTS PASSED';
+end $$;
