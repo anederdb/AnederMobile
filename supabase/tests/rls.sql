@@ -67,3 +67,53 @@ begin
 
   raise exception 'RLS TESTS PASSED';
 end $$;
+
+-- Events and announcements: approved members read, only admins write.
+do $$
+declare
+  admin_id uuid := gen_random_uuid();
+  pend_id  uuid := gen_random_uuid();
+  appr_id  uuid := gen_random_uuid();
+  n int;
+begin
+  insert into auth.users (id, email) values
+    (admin_id, 'admin2@t.test'), (pend_id, 'pending2@t.test'), (appr_id, 'approved2@t.test');
+  update public.profiles set role = 'admin', status = 'approved' where id = admin_id;
+  update public.profiles set status = 'approved' where id = appr_id;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', admin_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into public.events (title, starts_at) values ('Genel Kurul', now() + interval '7 days');
+  insert into public.announcements (title, body) values ('Duyuru', 'Metin');
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', pend_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.events; assert n = 0, 'pending sees no events';
+  select count(*) into n from public.announcements; assert n = 0, 'pending sees no announcements';
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', appr_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.events; assert n = 1, 'member sees events';
+  select count(*) into n from public.announcements; assert n = 1, 'member sees announcements';
+  begin
+    insert into public.events (title, starts_at) values ('Sahte', now());
+    raise exception 'member created an event';
+  exception when insufficient_privilege then null; end;
+  begin
+    insert into public.announcements (title, body) values ('Sahte', 'x');
+    raise exception 'member created an announcement';
+  exception when insufficient_privilege then null; end;
+  update public.events set title = 'Hack' where title = 'Genel Kurul';
+  get diagnostics n = row_count; assert n = 0, 'member cannot edit events';
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', admin_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  update public.events set title = 'Genel Kurul 2' where title = 'Genel Kurul';
+  get diagnostics n = row_count; assert n = 1, 'admin edits events';
+  reset role;
+
+  raise exception 'EVENTS TESTS PASSED';
+end $$;
