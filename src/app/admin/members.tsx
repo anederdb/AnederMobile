@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { Empty } from '@/components/EventCard';
 import { Screen } from '@/components/Screen';
 import { Button, Chip, ErrorText, Field } from '@/components/ui';
@@ -35,7 +36,10 @@ function MemberRoleEditor({ member, isSelf, onSaved }: { member: Profile; isSelf
   const changed = role !== member.role || (title.trim() || null) !== member.title;
   return (
     <View style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
-      <Text style={type.heading}>{member.full_name}</Text>
+      <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
+        <Avatar url={member.avatar_url} name={member.full_name} size={48} />
+        <Text style={type.heading}>{member.full_name}</Text>
+      </View>
       <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
         {ROLES.map((r) => (
           <Chip key={r} label={t.profile.role[r]} selected={role === r} onPress={() => !(isSelf && r !== 'admin') && setRole(r)} />
@@ -86,8 +90,13 @@ export default function PendingMembers() {
       {pending.length === 0 ? <Empty>{t.admin.noPending}</Empty> : null}
       {pending.map((p) => (
         <View key={p.id} style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
-          <Text style={type.heading}>{p.full_name}</Text>
-          <Text style={type.caption}>{p.phone}</Text>
+          <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
+            <Avatar url={p.avatar_url} name={p.full_name} size={64} />
+            <View style={{ flex: 1 }}>
+              <Text style={type.heading}>{p.full_name}</Text>
+              <Text style={type.caption}>{p.phone}</Text>
+            </View>
+          </View>
           <View style={{ flexDirection: 'row', gap: space.sm }}>
             <View style={{ flex: 1 }}>
               <Button title={t.admin.approve} onPress={() => approve(p)} />

@@ -3,6 +3,7 @@ export type Profile = {
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
+  photo_required: boolean;
   role: 'member' | 'admin' | 'scanner';
   title: string | null;
   terms_accepted_at: string | null;

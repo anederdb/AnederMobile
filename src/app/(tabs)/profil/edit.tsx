@@ -1,14 +1,17 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { Screen } from '@/components/Screen';
 import { Button, ErrorText, Field } from '@/components/ui';
 import { t } from '@/i18n/tr';
+import { uploadAvatar } from '@/lib/avatar';
+import { pickAvatar } from '@/lib/photos';
 import { useSession } from '@/lib/session';
 import { singleFlight } from '@/lib/singleFlight';
 import { supabase } from '@/lib/supabase';
-import { type } from '@/theme';
+import { space, type } from '@/theme';
 
 export default function EditProfile() {
   const { profile, refreshProfile } = useSession();
@@ -43,6 +46,24 @@ export default function EditProfile() {
   return (
     <Screen>
       <Text style={type.display}>{t.profile.edit}</Text>
+      <View style={{ alignItems: 'center', gap: space.sm }}>
+        <Avatar url={profile.avatar_url} name={profile.full_name} size={96} />
+        <Button
+          title={t.auth.photoChange}
+          variant="secondary"
+          onPress={async () => {
+            const image = await pickAvatar();
+            if (!image) return;
+            setError('');
+            try {
+              await uploadAvatar(profile.id, image);
+              await refreshProfile();
+            } catch {
+              setError(t.common.error);
+            }
+          }}
+        />
+      </View>
       <Field label={t.auth.fullName} value={fullName} onChangeText={setFullName} autoCapitalize="words" />
       <Field label={t.auth.phone} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
       {error ? <ErrorText>{error}</ErrorText> : null}

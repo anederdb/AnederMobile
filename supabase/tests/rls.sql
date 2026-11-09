@@ -537,3 +537,13 @@ begin
 
   raise exception 'QR TESTS PASSED';
 end $$;
+
+-- New signups must add a profile photo.
+do $$
+declare p uuid := gen_random_uuid(); req boolean;
+begin
+  insert into auth.users (id, email, raw_user_meta_data) values (p, 'p1@t.test', '{"full_name":"A"}'::jsonb);
+  select photo_required into req from public.profiles where id = p;
+  assert req = true, 'new signup requires a photo';
+  raise exception 'PHOTO TESTS PASSED';
+end $$;

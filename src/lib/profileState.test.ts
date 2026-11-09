@@ -6,6 +6,7 @@ const approved: Profile = {
   full_name: 'Üye Test',
   phone: '0500',
   avatar_url: null,
+  photo_required: false,
   title: null,
   terms_accepted_at: null,
   email_consent: false,

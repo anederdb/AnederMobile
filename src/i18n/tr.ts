@@ -49,6 +49,15 @@ export const tr = {
     consentSuffix: '. ANEDER etkinlik ve duyuru e-postaları almayı kabul ediyorum.',
     consentAnd: ' ve ',
     consentRequired: 'Devam etmek için kullanım şartlarını ve aydınlatma metnini kabul etmelisiniz.',
+    photo: 'Profil fotoğrafı',
+    photoChoose: 'Fotoğraf Seç',
+    photoChange: 'Fotoğrafı Değiştir',
+    photoRequired: 'Lütfen bir profil fotoğrafı ekleyin.',
+  },
+  photoGate: {
+    title: 'Profil fotoğrafınızı ekleyin',
+    body: 'Üyelik için yüzünüzün net göründüğü bir fotoğraf gerekiyor. Etkinliklerde ve yönetim onayında kullanılır.',
+    uploading: 'Fotoğraf yükleniyor…',
   },
   legal: {
     termsTitle: 'Kullanım Şartları',
@@ -64,7 +73,7 @@ export const tr = {
   profile: {
     title: 'Profilim',
     status: { pending: 'Onay bekliyor', approved: 'Onaylı üye' },
-    role: { member: 'Üye', admin: 'Yönetici', scanner: 'Tarayıcı' },
+    role: { member: 'Üye', admin: 'Yönetici', scanner: 'Check-in Görevlisi' },
     firms: 'Firmalarım',
     deleteAccount: 'Hesabı Sil',
     deleteTitle: 'Hesabı sil',

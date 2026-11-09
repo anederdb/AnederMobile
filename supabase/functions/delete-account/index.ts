@@ -32,6 +32,10 @@ Deno.serve(async (req) => {
     targetId = body.userId;
   }
 
+  // Remove the profile photo files (the rows cascade below, storage objects do not).
+  const { data: photos } = await admin.storage.from('avatars').list(targetId);
+  if (photos?.length) await admin.storage.from('avatars').remove(photos.map((p) => `${targetId}/${p.name}`));
+
   // Cascades remove profile, firms, talepler and push tokens.
   const { error: delError } = await admin.auth.admin.deleteUser(targetId);
   if (delError) return json({ error: delError.message }, 500);

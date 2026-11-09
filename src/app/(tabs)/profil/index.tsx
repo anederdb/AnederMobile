@@ -2,6 +2,7 @@ import { Link, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { ListingCard } from '@/components/ListingCard';
 import { Screen } from '@/components/Screen';
 import { TitleLabel } from '@/components/TitleLabel';
@@ -66,6 +67,7 @@ export default function Profile() {
           {t.profile.role[profile.role]} · {t.profile.status[profile.status]}
         </Text>
       </View>
+      <Avatar url={profile.avatar_url} name={profile.full_name} size={96} />
       <Text style={type.title}>{profile.full_name}</Text>
       <TitleLabel title={profile.title} />
       {profile.phone ? <Text style={type.body}>{profile.phone}</Text> : null}

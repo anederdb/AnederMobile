@@ -13,15 +13,16 @@ function Routes() {
   const segments = useSegments() as string[];
 
   const signedIn = !!session;
-  const approved = signedIn && !recovering && profile?.status === 'approved';
-  const pending = signedIn && !recovering && !approved;
+  const needsPhoto = signedIn && !recovering && !!profile?.photo_required && !profile.avatar_url;
+  const approved = signedIn && !recovering && !needsPhoto && profile?.status === 'approved';
+  const pending = signedIn && !recovering && !needsPhoto && !approved;
   const authArea = !signedIn || recovering; // a password-reset link signs the user in, but they must set a new password first
 
   // Guarded routes have no fallback of their own, so send the user to the area
   // that matches their state whenever they are somewhere else (cold start, sign-out, approval).
   const isAdmin = approved && profile?.role === 'admin';
-  const group = authArea ? '(auth)' : approved ? '(tabs)' : 'pending';
-  const target = recovering ? '/reset' : !signedIn ? '/login' : approved ? '/' : '/pending';
+  const group = authArea ? '(auth)' : needsPhoto ? 'photo' : approved ? '(tabs)' : 'pending';
+  const target = recovering ? '/reset' : !signedIn ? '/login' : needsPhoto ? '/photo' : approved ? '/' : '/pending';
   const inAllowedArea =
     (recovering ? segments[0] === '(auth)' && segments[1] === 'reset' : segments[0] === group) || (isAdmin && segments[0] === 'admin');
   useEffect(() => {
@@ -47,6 +48,9 @@ function Routes() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={authArea}>
         <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+      <Stack.Protected guard={needsPhoto}>
+        <Stack.Screen name="photo" />
       </Stack.Protected>
       <Stack.Protected guard={pending}>
         <Stack.Screen name="pending" />
