@@ -1,4 +1,4 @@
-import { applyListingFilters, formatPrice, normalizeFilters, normalizeTr } from './listingFilters';
+import { applyListingFilters, formatPrice, normalizeFilters, normalizeTr, parsePriceInput } from './listingFilters';
 
 describe('normalizeTr', () => {
   it.each([
@@ -18,7 +18,7 @@ describe('normalizeFilters', () => {
   });
 
   it('drops empty and blank values', () => {
-    expect(normalizeFilters({ district: '', neighborhood: '  ', rooms: undefined })).toEqual({});
+    expect(normalizeFilters({ district: '', neighborhood: '  ', rooms: [] })).toEqual({});
   });
 });
 
@@ -26,7 +26,7 @@ describe('normalizeFilters', () => {
 function recorder() {
   const calls: [string, ...unknown[]][] = [];
   const q: Record<string, unknown> = {};
-  for (const m of ['eq', 'gte', 'lte']) {
+  for (const m of ['eq', 'overlaps', 'or']) {
     q[m] = (...args: unknown[]) => {
       calls.push([m, ...args]);
       return q;
@@ -48,7 +48,7 @@ describe('applyListingFilters', () => {
       type: 'satilik',
       district: 'Gölbaşı',
       neighborhood: 'İncek',
-      rooms: '4+1',
+      rooms: ['3+1', '4+1'],
       minPrice: 8_000_000,
       maxPrice: 12_000_000,
     });
@@ -56,10 +56,29 @@ describe('applyListingFilters', () => {
       ['eq', 'type', 'satilik'],
       ['eq', 'district', 'Gölbaşı'],
       ['eq', 'neighborhood_norm', 'incek'],
-      ['eq', 'rooms', '4+1'],
-      ['gte', 'price', 8_000_000],
-      ['lte', 'price', 12_000_000],
+      ['overlaps', 'rooms', ['3+1', '4+1']],
+      ['or', 'max_price.is.null,max_price.gte.8000000'],
+      ['or', 'min_price.is.null,min_price.lte.12000000'],
     ]);
+  });
+
+  it('adds only the bound that was given', () => {
+    const { q, calls } = recorder();
+    applyListingFilters(q as never, { minPrice: 5_000_000 });
+    expect(calls).toEqual([['or', 'max_price.is.null,max_price.gte.5000000']]);
+  });
+});
+
+describe('parsePriceInput', () => {
+  it.each([
+    ['5.000.000', 5_000_000],
+    ['5000000', 5_000_000],
+    ['1.250,5', 1250.5],
+    ['', null],
+    ['   ', null],
+    ['abc', null],
+  ])('parses %p as %p', (input, expected) => {
+    expect(parsePriceInput(input)).toBe(expected);
   });
 });
 

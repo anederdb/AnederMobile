@@ -43,10 +43,11 @@ export type Listing = {
   type: 'satilik' | 'kiralik';
   district: string | null;
   neighborhood: string | null;
-  price: number | null;
-  rooms: string | null;
+  min_price: number | null;
+  max_price: number | null;
+  link: string | null;
+  rooms: string[];
   area_m2: number | null;
   description: string | null;
-  photos: string[];
   created_at: string;
 };

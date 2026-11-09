@@ -2,7 +2,7 @@ export type ListingFilters = {
   type?: 'satilik' | 'kiralik';
   district?: string;
   neighborhood?: string;
-  rooms?: string;
+  rooms?: string[];
   minPrice?: number;
   maxPrice?: number;
 };
@@ -26,7 +26,8 @@ export function normalizeFilters(f: ListingFilters): ListingFilters {
   if (f.type) out.type = f.type;
   if (f.district?.trim()) out.district = f.district.trim();
   if (f.neighborhood?.trim()) out.neighborhood = f.neighborhood.trim();
-  if (f.rooms?.trim()) out.rooms = f.rooms.trim();
+  const rooms = (f.rooms ?? []).map((r) => r.trim()).filter(Boolean);
+  if (rooms.length) out.rooms = rooms;
   let { minPrice, maxPrice } = f;
   if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) [minPrice, maxPrice] = [maxPrice, minPrice];
   if (minPrice !== undefined) out.minPrice = minPrice;
@@ -36,8 +37,8 @@ export function normalizeFilters(f: ListingFilters): ListingFilters {
 
 type Chainable = {
   eq(column: string, value: unknown): Chainable;
-  gte(column: string, value: unknown): Chainable;
-  lte(column: string, value: unknown): Chainable;
+  overlaps(column: string, value: unknown[]): Chainable;
+  or(filters: string): Chainable;
 };
 
 /** Adds the filter constraints to a Supabase select query. */
@@ -47,10 +48,18 @@ export function applyListingFilters<Q>(query: Q, filters: ListingFilters): Q {
   if (f.type) q = q.eq('type', f.type);
   if (f.district) q = q.eq('district', f.district);
   if (f.neighborhood) q = q.eq('neighborhood_norm', normalizeTr(f.neighborhood));
-  if (f.rooms) q = q.eq('rooms', f.rooms);
-  if (f.minPrice !== undefined) q = q.gte('price', f.minPrice);
-  if (f.maxPrice !== undefined) q = q.lte('price', f.maxPrice);
+  if (f.rooms) q = q.overlaps('rooms', f.rooms);
+  // A talep matches when its price range overlaps the filter range; a missing bound is open-ended.
+  if (f.minPrice !== undefined) q = q.or(`max_price.is.null,max_price.gte.${f.minPrice}`);
+  if (f.maxPrice !== undefined) q = q.or(`min_price.is.null,min_price.lte.${f.maxPrice}`);
   return q as unknown as Q;
+}
+
+/** "5.000.000" / "5000000" / "1.250,5" -> number; blank or non-numeric -> null. */
+export function parsePriceInput(input: string): number | null {
+  if (!input.trim()) return null;
+  const n = Number(input.replace(/\./g, '').replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
 }
 
 export function formatPrice(n: number): string {
