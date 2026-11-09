@@ -1,10 +1,10 @@
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text } from 'react-native';
 
 import { Logo } from '@/components/Logo';
 import { Screen } from '@/components/Screen';
-import { Button, ErrorText, Field } from '@/components/ui';
+import { Button, Checkbox, ErrorText, Field } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { supabase } from '@/lib/supabase';
 import { colors, space, type } from '@/theme';
@@ -17,16 +17,19 @@ export default function Register() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const router = useRouter();
 
   async function submit() {
     setError('');
     if (!fullName.trim() || !phone.trim() || !email.trim() || !password) return setError(t.auth.required);
     if (password.length < 6) return setError(t.auth.passwordShort);
+    if (!accepted) return setError(t.auth.consentRequired);
     setBusy(true);
     const { data, error: err } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { full_name: fullName.trim(), phone: phone.trim() } },
+      options: { data: { full_name: fullName.trim(), phone: phone.trim(), terms_accepted: true, email_consent: true } },
     });
     setBusy(false);
     if (err) return setError(t.auth.registerFailed);
@@ -42,6 +45,19 @@ export default function Register() {
       <Field label={t.auth.phone} value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" />
       <Field label={t.auth.email} value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
       <Field label={t.auth.password} value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" />
+      <Checkbox checked={accepted} onChange={setAccepted}>
+        <Text style={type.caption}>
+          {t.auth.consentPrefix}
+          <Text style={{ color: colors.primary, fontWeight: '600' }} onPress={() => router.push('/kullanim-sartlari')}>
+            {t.auth.terms}
+          </Text>
+          {t.auth.consentAnd}
+          <Text style={{ color: colors.primary, fontWeight: '600' }} onPress={() => router.push('/aydinlatma')}>
+            {t.auth.privacy}
+          </Text>
+          {t.auth.consentSuffix}
+        </Text>
+      </Checkbox>
       {error ? <ErrorText>{error}</ErrorText> : null}
       {notice ? <Text accessibilityRole="alert" style={type.label}>{notice}</Text> : null}
       <Button title={t.auth.register} onPress={submit} disabled={busy} />

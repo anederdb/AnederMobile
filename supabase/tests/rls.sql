@@ -372,3 +372,20 @@ begin
 
   raise exception 'ROLES TESTS PASSED';
 end $$;
+
+-- Signup consent is recorded from the signup metadata.
+do $$
+declare
+  c1 uuid := gen_random_uuid();
+  c2 uuid := gen_random_uuid();
+  ts timestamptz; ec boolean;
+begin
+  insert into auth.users (id, email, raw_user_meta_data) values
+    (c1, 'c1@t.test', '{"full_name":"A","terms_accepted":true,"email_consent":true}'::jsonb),
+    (c2, 'c2@t.test', '{"full_name":"B"}'::jsonb);
+  select terms_accepted_at, email_consent into ts, ec from public.profiles where id = c1;
+  assert ts is not null and ec = true, 'consent recorded';
+  select terms_accepted_at, email_consent into ts, ec from public.profiles where id = c2;
+  assert ts is null and ec = false, 'no consent without metadata';
+  raise exception 'CONSENT TESTS PASSED';
+end $$;

@@ -5,6 +5,8 @@ export type Profile = {
   avatar_url: string | null;
   role: 'member' | 'admin' | 'scanner';
   title: string | null;
+  terms_accepted_at: string | null;
+  email_consent: boolean;
   status: 'pending' | 'approved';
   created_at: string;
 };

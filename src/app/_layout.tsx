@@ -8,20 +8,22 @@ import { eventIdFrom, registerForPush } from '@/lib/push';
 import { SessionProvider, useSession } from '@/lib/session';
 
 function Routes() {
-  const { session, profile, loading } = useSession();
+  const { session, profile, loading, recovering } = useSession();
   const router = useRouter();
   const segments = useSegments() as string[];
 
   const signedIn = !!session;
-  const approved = signedIn && profile?.status === 'approved';
-  const pending = signedIn && !approved;
+  const approved = signedIn && !recovering && profile?.status === 'approved';
+  const pending = signedIn && !recovering && !approved;
+  const authArea = !signedIn || recovering; // a password-reset link signs the user in, but they must set a new password first
 
   // Guarded routes have no fallback of their own, so send the user to the area
   // that matches their state whenever they are somewhere else (cold start, sign-out, approval).
   const isAdmin = approved && profile?.role === 'admin';
-  const group = !signedIn ? '(auth)' : approved ? '(tabs)' : 'pending';
-  const target = !signedIn ? '/login' : approved ? '/' : '/pending';
-  const inAllowedArea = segments[0] === group || (isAdmin && segments[0] === 'admin');
+  const group = authArea ? '(auth)' : approved ? '(tabs)' : 'pending';
+  const target = recovering ? '/reset' : !signedIn ? '/login' : approved ? '/' : '/pending';
+  const inAllowedArea =
+    (recovering ? segments[0] === '(auth)' && segments[1] === 'reset' : segments[0] === group) || (isAdmin && segments[0] === 'admin');
   useEffect(() => {
     if (!loading && !inAllowedArea) router.replace(target);
   }, [loading, inAllowedArea, target, router]);
@@ -43,7 +45,7 @@ function Routes() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={!signedIn}>
+      <Stack.Protected guard={authArea}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
       <Stack.Protected guard={pending}>

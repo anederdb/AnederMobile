@@ -7,6 +7,8 @@ const approved: Profile = {
   phone: '0500',
   avatar_url: null,
   title: null,
+  terms_accepted_at: null,
+  email_consent: false,
   role: 'member',
   status: 'approved',
   created_at: '2026-11-04T00:00:00Z',

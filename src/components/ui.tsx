@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 
 import { colors, radius, space, touch, type } from '@/theme';
@@ -62,6 +63,31 @@ export function Chip({ label, selected, onPress }: { label: string; selected?: b
       }}>
       <Text style={{ color: selected ? colors.onPrimary : colors.ink, fontWeight: '600', fontSize: 14 }}>{label}</Text>
     </Pressable>
+  );
+}
+
+export function Checkbox({ checked, onChange, children }: { checked: boolean; onChange: (v: boolean) => void; children: ReactNode }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'flex-start' }}>
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked }}
+        onPress={() => onChange(!checked)}
+        hitSlop={8}
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: radius.sm,
+          borderWidth: 2,
+          borderColor: checked ? colors.primary : colors.border,
+          backgroundColor: checked ? colors.primary : colors.background,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        {checked ? <Text style={{ color: colors.onPrimary, fontWeight: '800' }}>✓</Text> : null}
+      </Pressable>
+      <View style={{ flex: 1 }}>{children}</View>
+    </View>
   );
 }
 

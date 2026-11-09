@@ -33,6 +33,9 @@ export default function Login() {
       <Field label={t.auth.password} value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" />
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button title={t.auth.login} onPress={submit} disabled={busy} />
+      <Link href="/forgot" style={{ textAlign: 'center', color: colors.primary, fontWeight: '600', paddingVertical: space.sm }}>
+        {t.auth.forgot}
+      </Link>
       <Link href="/register" style={{ textAlign: 'center', color: colors.primary, fontWeight: '600', paddingVertical: space.sm }}>
         {t.auth.toRegister}
       </Link>
