@@ -183,15 +183,27 @@ begin
   insert into auth.users (id, email) values (o_id, 'o5@t.test'), (m_id, 'm5@t.test'), (p_id, 'p5@t.test');
   update public.profiles set status = 'approved' where id in (o_id, m_id);
 
-  insert into public.listings (owner_id, title, type, district, neighborhood, price, rooms, area_m2) values
-    (o_id, 'Incek villa', 'satilik', 'Gölbaşı', 'İncek', 10000000, '4+1', 200) returning id into l1;
-  insert into public.listings (owner_id, title, type, district, neighborhood, price, rooms, area_m2) values
-    (o_id, 'Incek daire', 'satilik', 'Gölbaşı', 'Incek', 9000000, '4+1', 190) returning id into l2;
-  insert into public.listings (owner_id, title, type, district, neighborhood, price, rooms, area_m2) values
-    (o_id, 'Eryaman daire', 'satilik', 'Etimesgut', 'Eryaman', 10000000, '3+1', 150),
-    (o_id, 'Incek kiralik', 'kiralik', 'Gölbaşı', 'İncek', 10000000, '4+1', 200);
+  insert into public.listings (owner_id, title, type, district, neighborhood, min_price, max_price, rooms, area_m2) values
+    (o_id, 'Incek villa', 'satilik', 'Gölbaşı', 'İncek', 9000000, 11000000, '{4+1}', 200) returning id into l1;
+  insert into public.listings (owner_id, title, type, district, neighborhood, min_price, max_price, rooms, area_m2) values
+    (o_id, 'Incek daire', 'satilik', 'Gölbaşı', 'Incek', 8000000, 9500000, '{3+1,4+1}', 190) returning id into l2;
+  insert into public.listings (owner_id, title, type, district, neighborhood, min_price, max_price, rooms, area_m2) values
+    (o_id, 'Eryaman daire', 'satilik', 'Etimesgut', 'Eryaman', 9000000, 11000000, '{3+1}', 150),
+    (o_id, 'Incek kiralik', 'kiralik', 'Gölbaşı', 'İncek', 9000000, 11000000, '{4+1}', 200);
   insert into public.listings (owner_id, title, type, district) values
     (o_id, 'Fiyatsiz', 'satilik', 'Gölbaşı') returning id into l5;
+
+  -- price range rules: open-ended ranges are fine, an inverted range is not
+  insert into public.listings (owner_id, title, type, min_price) values (o_id, 'sadece min', 'satilik', 5000000);
+  insert into public.listings (owner_id, title, type, max_price) values (o_id, 'sadece max', 'satilik', 5000000);
+  begin
+    insert into public.listings (owner_id, title, type, min_price, max_price) values (o_id, 'ters', 'satilik', 9, 5);
+    raise exception 'inverted price range was accepted';
+  exception when check_violation then null; end;
+  begin
+    insert into public.listings (owner_id, title, type, link) values (o_id, 'bad link', 'satilik', 'javascript:alert(1)');
+    raise exception 'non-http link was accepted';
+  exception when check_violation then null; end;
 
   select neighborhood_norm into k from public.listings where id = l1;
   assert k = 'incek', 'İncek is stored as incek';
@@ -211,7 +223,7 @@ begin
   -- approved member: sees all, similar works, cannot post for or edit someone else
   perform set_config('request.jwt.claims', json_build_object('sub', m_id, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  select count(*) into n from public.listings; assert n = 5, 'member sees all listings';
+  select count(*) into n from public.listings; assert n = 7, 'member sees all listings';
   select count(*) into n from public.similar_listings(l1);
   assert n = 1, 'only the Incek 9M listing is similar to the Incek 10M one';
   select count(*) into n from public.similar_listings(l1) where id = l2; assert n = 1, 'similar is the 9M Incek listing';
