@@ -51,14 +51,14 @@ export default function Register() {
     <Screen centered>
       <Logo size={96} />
       <Text style={[type.display, { textAlign: 'center', marginBottom: space.sm }]}>{t.auth.registerTitle}</Text>
-      <Field label={t.auth.fullName} value={fullName} onChangeText={setFullName} autoCapitalize="words" autoComplete="name" />
-      <Field label={t.auth.phone} value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" />
-      <Field label={t.auth.email} value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
-      <Field label={t.auth.password} value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" />
       <View style={{ alignItems: 'center', gap: space.sm }}>
         <Avatar url={photo?.uri} name={fullName} size={96} />
         <Button title={photo ? t.auth.photoChange : t.auth.photoChoose} variant="secondary" onPress={async () => setPhoto((await pickAvatar()) ?? photo)} />
       </View>
+      <Field label={t.auth.fullName} value={fullName} onChangeText={setFullName} autoCapitalize="words" autoComplete="name" />
+      <Field label={t.auth.phone} value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" />
+      <Field label={t.auth.email} value={email} onChangeText={setEmail} keyboardType="email-address" autoComplete="email" />
+      <Field label={t.auth.password} value={password} onChangeText={setPassword} secureTextEntry autoComplete="new-password" />
       <Checkbox checked={accepted} onChange={setAccepted}>
         <Text style={type.caption}>
           {t.auth.consentPrefix}
