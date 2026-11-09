@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 
 import { ListingCard } from '@/components/ListingCard';
 import { Screen } from '@/components/Screen';
+import { TitleLabel } from '@/components/TitleLabel';
 import { Button, ErrorText } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { confirm } from '@/lib/confirm';
@@ -66,6 +67,7 @@ export default function Profile() {
         </Text>
       </View>
       <Text style={type.title}>{profile.full_name}</Text>
+      <TitleLabel title={profile.title} />
       {profile.phone ? <Text style={type.body}>{profile.phone}</Text> : null}
       <Button title={t.profile.edit} variant="secondary" onPress={() => router.push('/profil/edit')} />
       <Link href="/profil/firms" asChild>

@@ -4,6 +4,7 @@ import { Linking, Text, View } from 'react-native';
 
 import { ListingCard } from '@/components/ListingCard';
 import { Screen } from '@/components/Screen';
+import { TitleLabel } from '@/components/TitleLabel';
 import { Button } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { supabase } from '@/lib/supabase';
@@ -41,6 +42,7 @@ export default function MemberDetail() {
   return (
     <Screen>
       <Text style={type.display}>{member.full_name}</Text>
+      <TitleLabel title={member.title} />
       {member.phone ? <Button title={`${t.listings.call}: ${member.phone}`} onPress={() => Linking.openURL(`tel:${member.phone}`)} /> : null}
 
       {firms.length > 0 ? <Text style={[type.title, { marginTop: space.sm }]}>{t.members.firms}</Text> : null}

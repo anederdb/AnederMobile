@@ -3,7 +3,8 @@ export type Profile = {
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
-  role: 'member' | 'admin';
+  role: 'member' | 'admin' | 'scanner';
+  title: string | null;
   status: 'pending' | 'approved';
   created_at: string;
 };

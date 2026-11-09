@@ -6,6 +6,7 @@ const approved: Profile = {
   full_name: 'Üye Test',
   phone: '0500',
   avatar_url: null,
+  title: null,
   role: 'member',
   status: 'approved',
   created_at: '2026-11-04T00:00:00Z',

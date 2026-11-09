@@ -41,7 +41,7 @@ export const tr = {
   profile: {
     title: 'Profilim',
     status: { pending: 'Onay bekliyor', approved: 'Onaylı üye' },
-    role: { member: 'Üye', admin: 'Yönetici' },
+    role: { member: 'Üye', admin: 'Yönetici', scanner: 'Tarayıcı' },
     firms: 'Firmalarım',
     deleteAccount: 'Hesabı Sil',
     deleteTitle: 'Hesabı sil',
@@ -99,6 +99,9 @@ export const tr = {
     reject: 'Reddet',
     rejectConfirm: 'Başvuru reddedilip hesap silinsin mi?',
     noPending: 'Bekleyen başvuru yok.',
+    roles: 'Rol ve unvan',
+    titleField: 'Unvan (üyeler listesinde isim altında görünür)',
+    selfRoleHint: 'Kendi yönetici rolünüzü buradan değiştiremezsiniz.',
     sendPush: 'Bildirim Gönder',
     pushTitle: 'Bildirim başlığı',
     pushBody: 'Mesaj',

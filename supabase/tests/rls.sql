@@ -320,3 +320,55 @@ begin
 
   raise exception 'EVENT PHOTOS TESTS PASSED';
 end $$;
+
+-- Roles and titles: only admins set them; scanners can scan, plain members and pending scanners cannot.
+do $$
+declare
+  a_id uuid := gen_random_uuid();   -- admin
+  s_id uuid := gen_random_uuid();   -- approved scanner
+  m_id uuid := gen_random_uuid();   -- approved member
+  ps_id uuid := gen_random_uuid();  -- pending scanner
+  ok boolean;
+  t text;
+begin
+  insert into auth.users (id, email) values
+    (a_id, 'a11@t.test'), (s_id, 's11@t.test'), (m_id, 'm11@t.test'), (ps_id, 'ps11@t.test');
+  update public.profiles set role = 'admin', status = 'approved' where id = a_id;
+  update public.profiles set role = 'scanner', status = 'approved' where id = s_id;
+  update public.profiles set status = 'approved' where id = m_id;
+  update public.profiles set role = 'scanner' where id = ps_id;
+
+  -- a member cannot give themselves a title or a role
+  perform set_config('request.jwt.claims', json_build_object('sub', m_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    update public.profiles set title = 'Başkan' where id = m_id;
+    raise exception 'member set own title';
+  exception when insufficient_privilege then null; end;
+  begin
+    update public.profiles set role = 'scanner' where id = m_id;
+    raise exception 'member set own role';
+  exception when insufficient_privilege then null; end;
+  select public.can_scan() into ok; assert ok = false, 'plain member cannot scan';
+  reset role;
+
+  -- an admin can set a title and a scanner role
+  perform set_config('request.jwt.claims', json_build_object('sub', a_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  update public.profiles set title = 'Başkan Yardımcısı', role = 'scanner' where id = m_id;
+  select public.can_scan() into ok; assert ok = true, 'admin can scan';
+  reset role;
+  select title into t from public.profiles where id = m_id; assert t = 'Başkan Yardımcısı', 'title saved';
+
+  -- scanner scans; a pending scanner does not
+  perform set_config('request.jwt.claims', json_build_object('sub', s_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select public.can_scan() into ok; assert ok = true, 'scanner can scan';
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', ps_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select public.can_scan() into ok; assert ok = false, 'pending scanner cannot scan';
+  reset role;
+
+  raise exception 'ROLES TESTS PASSED';
+end $$;

@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, Text } from 'react-native';
 
 import { Screen } from '@/components/Screen';
+import { TitleLabel } from '@/components/TitleLabel';
 import { Field } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { matchesMember } from '@/lib/memberSearch';
@@ -57,6 +58,7 @@ export default function Members() {
             opacity: pressed ? 0.85 : 1,
           })}>
           <Text style={type.heading}>{profile.full_name}</Text>
+          <TitleLabel title={profile.title} />
           {firms.length > 0 ? <Text style={type.caption}>{firms.join(' · ')}</Text> : null}
         </Pressable>
       ))}
