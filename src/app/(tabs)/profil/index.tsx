@@ -1,6 +1,6 @@
 import { Link, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { ListingCard } from '@/components/ListingCard';
@@ -55,6 +55,16 @@ export default function Profile() {
   return (
     <Screen>
       <Text style={type.display}>{t.profile.title}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t.auth.photoChange} onPress={() => router.push('/profil/edit')}>
+          <Avatar url={profile.avatar_url} name={profile.full_name} size={88} />
+        </Pressable>
+        <View style={{ flex: 1, gap: space.xs }}>
+          <Text style={type.title}>{profile.full_name}</Text>
+          <TitleLabel title={profile.title} />
+          {profile.phone ? <Text style={type.body}>{profile.phone}</Text> : null}
+        </View>
+      </View>
       <View
         style={{
           alignSelf: 'flex-start',
@@ -67,10 +77,6 @@ export default function Profile() {
           {t.profile.role[profile.role]} · {t.profile.status[profile.status]}
         </Text>
       </View>
-      <Avatar url={profile.avatar_url} name={profile.full_name} size={96} />
-      <Text style={type.title}>{profile.full_name}</Text>
-      <TitleLabel title={profile.title} />
-      {profile.phone ? <Text style={type.body}>{profile.phone}</Text> : null}
       <Button title={t.profile.edit} variant="secondary" onPress={() => router.push('/profil/edit')} />
       <Button title={t.qr.openMy} variant="secondary" onPress={() => router.push('/profil/qr')} />
       {profile.role === 'admin' || profile.role === 'scanner' ? (
