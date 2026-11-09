@@ -6,7 +6,6 @@ import { ListingCard } from '@/components/ListingCard';
 import { Screen } from '@/components/Screen';
 import { Button } from '@/components/ui';
 import { t } from '@/i18n/tr';
-import { signedUrls } from '@/lib/photos';
 import { supabase } from '@/lib/supabase';
 import type { Firm, Listing, Profile } from '@/lib/types';
 import { colors, radius, space, type } from '@/theme';
@@ -16,7 +15,6 @@ export default function MemberDetail() {
   const [member, setMember] = useState<Profile | null>(null);
   const [firms, setFirms] = useState<Firm[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [urls, setUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (async () => {
@@ -29,7 +27,6 @@ export default function MemberDetail() {
       setFirms((f.data as Firm[]) ?? []);
       const rows = (l.data as Listing[]) ?? [];
       setListings(rows);
-      setUrls(await signedUrls(rows.map((r) => r.photos[0]).filter(Boolean)));
     })();
   }, [id]);
 
@@ -65,7 +62,7 @@ export default function MemberDetail() {
       <Text style={[type.title, { marginTop: space.sm }]}>{t.members.listings}</Text>
       {listings.length === 0 ? <Text style={type.body}>{t.members.noListings}</Text> : null}
       {listings.map((l) => (
-        <ListingCard key={l.id} listing={l} photoUrl={l.photos[0] ? urls[l.photos[0]] : undefined} />
+        <ListingCard key={l.id} listing={l} />
       ))}
     </Screen>
   );

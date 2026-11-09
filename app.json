@@ -40,7 +40,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "İlan ve etkinlik fotoğrafları eklemek için fotoğraf galerinize erişim gerekir."
+          "photosPermission": "Etkinlik fotoğrafları eklemek için fotoğraf galerinize erişim gerekir."
         }
       ]
     ],

@@ -1,4 +1,4 @@
-import { applyListingFilters, formatPrice, normalizeFilters, normalizeTr, parsePriceInput } from './listingFilters';
+import { applyListingFilters, formatPrice, normalizeFilters, normalizeTr, parsePriceInput, formatPriceRange } from './listingFilters';
 
 describe('normalizeTr', () => {
   it.each([
@@ -89,5 +89,16 @@ describe('formatPrice', () => {
     [0, '0 ₺'],
   ])('formats %p as %p', (n, expected) => {
     expect(formatPrice(n)).toBe(expected);
+  });
+});
+
+describe('formatPriceRange', () => {
+  it.each([
+    [5_000_000, 8_000_000, '5.000.000 ₺ – 8.000.000 ₺'],
+    [5_000_000, null, 'En az 5.000.000 ₺'],
+    [null, 8_000_000, 'En çok 8.000.000 ₺'],
+    [null, null, null],
+  ])('formats %p..%p', (min, max, expected) => {
+    expect(formatPriceRange(min, max)).toBe(expected);
   });
 });

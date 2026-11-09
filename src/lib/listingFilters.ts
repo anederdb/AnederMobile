@@ -65,3 +65,11 @@ export function parsePriceInput(input: string): number | null {
 export function formatPrice(n: number): string {
   return `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')} ₺`;
 }
+
+/** "5.000.000 ₺ – 8.000.000 ₺", "En az 5.000.000 ₺", "En çok 8.000.000 ₺", or null when neither bound is set. */
+export function formatPriceRange(min: number | null, max: number | null): string | null {
+  if (min != null && max != null) return `${formatPrice(min)} – ${formatPrice(max)}`;
+  if (min != null) return `En az ${formatPrice(min)}`;
+  if (max != null) return `En çok ${formatPrice(max)}`;
+  return null;
+}

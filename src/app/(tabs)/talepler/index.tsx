@@ -8,7 +8,6 @@ import { Button, Chip, Field } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { ANKARA_DISTRICTS, ROOM_OPTIONS } from '@/lib/districts';
 import { applyListingFilters, type ListingFilters } from '@/lib/listingFilters';
-import { signedUrls } from '@/lib/photos';
 import { supabase } from '@/lib/supabase';
 import type { Listing } from '@/lib/types';
 import { space, type } from '@/theme';
@@ -20,15 +19,12 @@ export default function Listings() {
   const [maxText, setMaxText] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [items, setItems] = useState<Listing[] | null>(null);
-  const [urls, setUrls] = useState<Record<string, string>>({});
 
   const load = useCallback(async (f: ListingFilters) => {
     const { data } = await applyListingFilters(supabase.from('listings').select('*'), f).order('created_at', {
       ascending: false,
     });
-    const rows = (data as Listing[]) ?? [];
-    setItems(rows);
-    setUrls(await signedUrls(rows.map((r) => r.photos[0]).filter(Boolean)));
+    setItems((data as Listing[]) ?? []);
   }, []);
 
   useFocusEffect(
@@ -47,6 +43,12 @@ export default function Listings() {
     update(kind === 'min' ? { minPrice: digits ? Number(digits) : undefined } : { maxPrice: digits ? Number(digits) : undefined });
   }
 
+  function toggleRoom(room: string) {
+    const current = filters.rooms ?? [];
+    const next = current.includes(room) ? current.filter((r) => r !== room) : [...current, room];
+    update({ rooms: next.length ? next : undefined });
+  }
+
   function clear() {
     setFilters({});
     setMinText('');
@@ -60,7 +62,7 @@ export default function Listings() {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text style={type.display}>{t.listings.title}</Text>
       </View>
-      <Button title={t.listings.add} onPress={() => router.push('/ilanlar/form')} />
+      <Button title={t.listings.add} onPress={() => router.push('/talepler/form')} />
 
       <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
         <Chip label={t.listings.all} selected={!filters.type} onPress={() => update({ type: undefined })} />
@@ -82,7 +84,7 @@ export default function Listings() {
           <Text style={type.label}>{t.listings.rooms}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm }}>
             {ROOM_OPTIONS.map((r) => (
-              <Chip key={r} label={r} selected={filters.rooms === r} onPress={() => update({ rooms: filters.rooms === r ? undefined : r })} />
+              <Chip key={r} label={r} selected={!!filters.rooms?.includes(r)} onPress={() => toggleRoom(r)} />
             ))}
           </ScrollView>
           <View style={{ flexDirection: 'row', gap: space.sm }}>
@@ -100,7 +102,7 @@ export default function Listings() {
       {items === null ? <Text style={type.caption}>{t.common.loading}</Text> : null}
       {items && items.length === 0 ? <Text style={type.body}>{t.listings.empty}</Text> : null}
       {items?.map((l) => (
-        <ListingCard key={l.id} listing={l} photoUrl={l.photos[0] ? urls[l.photos[0]] : undefined} />
+        <ListingCard key={l.id} listing={l} />
       ))}
     </Screen>
   );

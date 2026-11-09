@@ -1,15 +1,13 @@
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Linking, ScrollView, Text, View } from 'react-native';
+import { Linking, Text, View } from 'react-native';
 
 import { ListingCard } from '@/components/ListingCard';
 import { Screen } from '@/components/Screen';
 import { Button } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { confirm } from '@/lib/confirm';
-import { formatPrice } from '@/lib/listingFilters';
-import { removeListingPhotos, signedUrls } from '@/lib/photos';
+import { formatPriceRange } from '@/lib/listingFilters';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import type { Firm, Listing, Profile } from '@/lib/types';
@@ -23,7 +21,6 @@ export default function ListingDetail() {
   const [owner, setOwner] = useState<Profile | null>(null);
   const [firm, setFirm] = useState<Firm | null>(null);
   const [similar, setSimilar] = useState<Listing[]>([]);
-  const [urls, setUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (async () => {
@@ -40,7 +37,6 @@ export default function ListingDetail() {
       setFirm(firmRes.data as Firm | null);
       const sim = (similarRes.data as Listing[] | null) ?? [];
       setSimilar(sim);
-      setUrls(await signedUrls([...l.photos, ...sim.map((s) => s.photos[0]).filter(Boolean)]));
     })();
   }, [id]);
 
@@ -54,37 +50,30 @@ export default function ListingDetail() {
 
   const canManage = profile?.id === listing.owner_id || profile?.role === 'admin';
   const place = [listing.neighborhood, listing.district].filter(Boolean).join(', ');
-  const specs = [listing.rooms, listing.area_m2 ? `${listing.area_m2} ${t.listings.sqm}` : null].filter(Boolean).join(' · ');
+  const specs = [listing.rooms.join(', ') || null, listing.area_m2 ? `${listing.area_m2} ${t.listings.sqm}` : null].filter(Boolean).join(' · ');
 
   async function remove() {
     if (!(await confirm(t.listings.deleteConfirm, listing!.title))) return;
     await supabase.from('listings').delete().eq('id', listing!.id);
-    await removeListingPhotos(listing!.photos);
-    router.replace('/ilanlar');
+    router.replace('/talepler');
   }
 
   return (
     <Screen>
-      {listing.photos.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm }}>
-          {listing.photos.map((p) => (
-            <Image
-              key={p}
-              source={{ uri: urls[p] }}
-              accessibilityLabel={listing.title}
-              contentFit="cover"
-              style={{ width: 300, aspectRatio: 4 / 3, borderRadius: radius.lg, backgroundColor: colors.border }}
-            />
-          ))}
-        </ScrollView>
-      ) : null}
-
-      <Text style={[type.display, { color: colors.primary }]}>{listing.price != null ? formatPrice(listing.price) : '—'}</Text>
+      <Text style={[type.display, { color: colors.primary }]}>{formatPriceRange(listing.min_price, listing.max_price) ?? '—'}</Text>
       <Text style={type.title}>{listing.title}</Text>
       <Text style={type.label}>{listing.type === 'satilik' ? t.listings.sale : t.listings.rent}</Text>
       {place ? <Text style={type.body}>{place}</Text> : null}
       {specs ? <Text style={type.body}>{specs}</Text> : null}
       {listing.description ? <Text style={type.body}>{listing.description}</Text> : null}
+      {listing.link ? (
+        <Text
+          accessibilityRole="link"
+          style={{ color: colors.primary, fontWeight: '600', paddingVertical: space.xs }}
+          onPress={() => Linking.openURL(listing.link!)}>
+          {t.listings.openLink}
+        </Text>
+      ) : null}
 
       {owner ? (
         <View style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
@@ -106,7 +95,7 @@ export default function ListingDetail() {
       {canManage ? (
         <View style={{ flexDirection: 'row', gap: space.sm }}>
           <View style={{ flex: 1 }}>
-            <Button title={t.common.edit} variant="secondary" onPress={() => router.push({ pathname: '/ilanlar/form', params: { id: listing.id } })} />
+            <Button title={t.common.edit} variant="secondary" onPress={() => router.push({ pathname: '/talepler/form', params: { id: listing.id } })} />
           </View>
           <View style={{ flex: 1 }}>
             <Button title={t.common.delete} variant="danger" onPress={remove} />
@@ -118,7 +107,7 @@ export default function ListingDetail() {
         <>
           <Text style={[type.title, { marginTop: space.sm }]}>{t.listings.similar}</Text>
           {similar.map((s) => (
-            <ListingCard key={s.id} listing={s} photoUrl={s.photos[0] ? urls[s.photos[0]] : undefined} />
+            <ListingCard key={s.id} listing={s} />
           ))}
         </>
       ) : null}

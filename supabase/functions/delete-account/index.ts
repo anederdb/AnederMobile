@@ -32,26 +32,9 @@ Deno.serve(async (req) => {
     targetId = body.userId;
   }
 
-  // Cascades remove profile, firms, listings and push tokens.
+  // Cascades remove profile, firms, talepler and push tokens.
   const { error: delError } = await admin.auth.admin.deleteUser(targetId);
   if (delError) return json({ error: delError.message }, 500);
 
-  // Storage is not covered by the cascade: purge the member's private listing photos (<uid>/...).
-  let photosPurged = true;
-  for (let i = 0; i < 50; i++) {
-    const { data: files, error: listError } = await admin.storage.from('listing-photos').list(targetId, { limit: 100 });
-    if (listError) {
-      photosPurged = false;
-      break;
-    }
-    if (!files || files.length === 0) break;
-    const { error: removeError } = await admin.storage
-      .from('listing-photos')
-      .remove(files.map((f) => `${targetId}/${f.name}`));
-    if (removeError) {
-      photosPurged = false;
-      break;
-    }
-  }
-  return json({ ok: true, photosPurged });
+  return json({ ok: true });
 });
