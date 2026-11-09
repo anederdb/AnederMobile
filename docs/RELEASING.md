@@ -51,7 +51,7 @@ npx eas-cli submit -p android        # uploads to Play (see note below)
 - Privacy policy URL (Turkish; mention KVKK) and a support contact (e.g. info@aneder.org).
 - App Review needs **demo login credentials** because the app is members-only: create an approved test member and give it in the review notes, and say that membership is approved by the association.
 - Account deletion inside the app is required by both stores; it already exists (Profil → Hesabı Sil).
-- Apple privacy labels and Google Data safety form: the app collects name, phone, email, firm and listing data, photos, and a push token.
+- Apple privacy labels and Google Data safety form: the app collects name, phone, email, firm and talep data, event photos (admins only), camera use for QR scanning (no images stored), and a push token.
 - Store screenshots and a Turkish description.
 
 ## Before real members join
@@ -59,7 +59,7 @@ npx eas-cli submit -p android        # uploads to Play (see note below)
 - Run `supabase/scripts/cleanup-test-data.sql` (dashboard SQL editor) and delete the leftover test files in Storage.
 - Supabase **free projects pause after about a week of inactivity**, which would take the app offline. Move the project to the Pro plan before launch (it also adds daily backups and leaked-password protection).
 - Supabase's built-in email sender is heavily rate limited; if email confirmation stays on, set up custom SMTP, or turn "Confirm email" off since admins approve members anyway.
-- Do one real-phone test of photo upload and of a push notification (neither can be checked on web).
+- Do one real-phone test of event photo upload, a push notification, QR scanning and the password-reset link (none can be fully checked on web).
 
 ## Optional: fixing bugs without a store review
 
