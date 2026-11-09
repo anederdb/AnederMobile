@@ -97,6 +97,8 @@ export const tr = {
     pushBody: 'Mesaj',
     pushSend: 'Tüm Üyelere Gönder',
     pushSent: 'cihaza gönderildi',
+    pushNoDevices: 'Hiçbir cihaza gönderilemedi: kayıtlı cihaz yok. Üyelerin uygulamayı açıp bildirim izni vermesi gerekir.',
+    pushFailed: 'başarısız',
     pushConfirm: 'Bildirim tüm onaylı üyelere gönderilecek. Devam edilsin mi?',
     notifyOnPublish: 'Yayınlarken üyelere bildirim gönder',
     pickPhoto: 'Fotoğraf Seç',

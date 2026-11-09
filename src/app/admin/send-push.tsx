@@ -24,7 +24,9 @@ export default function SendPush() {
     const { data, error: err } = await supabase.functions.invoke('send-push', { body: { title, body } });
     setBusy(false);
     if (err) return setError(t.common.error);
-    setResult(`${data.sent} ${t.admin.pushSent}`);
+    setResult(
+      data.sent === 0 ? t.admin.pushNoDevices : `${data.sent} ${t.admin.pushSent}${data.failed ? ` (${data.failed} ${t.admin.pushFailed})` : ''}`,
+    );
     setTitle('');
     setBody('');
   }
