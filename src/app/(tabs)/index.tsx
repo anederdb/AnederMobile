@@ -41,7 +41,7 @@ export default function Home() {
         <Logo size={56} />
         <View style={{ flex: 1 }}>
           <Text style={type.caption}>{t.auth.tagline}</Text>
-          <Text style={type.title}>Hoş geldin, {profile?.full_name?.split(' ')[0] ?? ''}</Text>
+          <Text style={type.title}>Hoş geldin, {profile?.full_name ?? ''}</Text>
         </View>
       </View>
       <SectionTitle>{t.events.next}</SectionTitle>
