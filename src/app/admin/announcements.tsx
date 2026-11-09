@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 
+import { PublishToggles } from '@/components/PublishToggles';
 import { Screen } from '@/components/Screen';
 import { Button, ErrorText, Field } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { confirm } from '@/lib/confirm';
 import { formatTrDateTime } from '@/lib/dates';
+import { describePublish, publish } from '@/lib/notify';
+import { singleFlight } from '@/lib/singleFlight';
 import { supabase } from '@/lib/supabase';
 import type { Announcement } from '@/lib/types';
 import { colors, radius, space, type } from '@/theme';
@@ -16,6 +19,10 @@ export default function ManageAnnouncements() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [error, setError] = useState('');
+  const [sendPush, setSendPush] = useState(true);
+  const [sendEmail, setSendEmail] = useState(true);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     const { data } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
@@ -40,17 +47,35 @@ export default function ManageAnnouncements() {
     setError('');
   }
 
-  async function submit() {
-    setError('');
-    if (!title.trim() || !body.trim()) return setError(t.auth.required);
-    const row = { title: title.trim(), body: body.trim() };
-    const { error: err } = editing
-      ? await supabase.from('announcements').update(row).eq('id', editing.id)
-      : await supabase.from('announcements').insert(row);
-    if (err) return setError(t.common.error);
-    reset();
-    await load();
-  }
+  // singleFlight: a second tap while the first save is running does nothing.
+  const submit = useMemo(
+    () =>
+      singleFlight(async () => {
+        setError('');
+        setNote('');
+        if (!title.trim() || !body.trim()) return setError(t.auth.required);
+        setBusy(true);
+        try {
+          const row = { title: title.trim(), body: body.trim() };
+          const wasEditing = !!editing;
+          const { error: err } = editing
+            ? await supabase.from('announcements').update(row).eq('id', editing.id)
+            : await supabase.from('announcements').insert(row);
+          if (err) return setError(t.common.error);
+          reset();
+          setNote(t.admin.publishedNote);
+          await load();
+          if (!wasEditing && (sendPush || sendEmail)) {
+            // After the post is saved: a failed channel is reported, never undone.
+            const result = await publish({ title: row.title, body: row.body, push: sendPush, email: sendEmail });
+            setNote(`${t.admin.publishedNote} ${describePublish(result, t.admin.publishLabels)}`);
+          }
+        } finally {
+          setBusy(false);
+        }
+      }),
+    [title, body, editing, sendPush, sendEmail, load],
+  );
 
   async function remove(a: Announcement) {
     if (!(await confirm(t.admin.deleteConfirm, a.title))) return;
@@ -84,8 +109,10 @@ export default function ManageAnnouncements() {
         multiline
         style={{ minHeight: 120, textAlignVertical: 'top', paddingTop: space.sm }}
       />
+      {!editing ? <PublishToggles push={sendPush} email={sendEmail} onPush={setSendPush} onEmail={setSendEmail} /> : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <Button title={editing ? t.admin.update : t.admin.create} onPress={submit} />
+      {note ? <Text accessibilityRole="alert" style={type.label}>{note}</Text> : null}
+      <Button title={editing ? t.admin.update : t.admin.create} onPress={() => submit()} disabled={busy} />
       {editing ? <Button title={t.common.cancel} variant="secondary" onPress={reset} /> : null}
     </Screen>
   );

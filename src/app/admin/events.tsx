@@ -1,14 +1,16 @@
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { DateTimeField } from '@/components/DateTimeField';
+import { PublishToggles } from '@/components/PublishToggles';
 import { Screen } from '@/components/Screen';
 import { Button, ErrorText, Field } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { confirm } from '@/lib/confirm';
 import { uploadCover, type PickedImage } from '@/lib/cover';
 import { formatTrDateTime } from '@/lib/dates';
+import { describePublish, publish } from '@/lib/notify';
 import { pickImages } from '@/lib/photos';
 import { singleFlight } from '@/lib/singleFlight';
 import { supabase } from '@/lib/supabase';
@@ -26,7 +28,9 @@ export default function ManageEvents() {
   const [date, setDate] = useState<Date | null>(null);
   const [existing, setExisting] = useState<EventPhoto[]>([]);
   const [fresh, setFresh] = useState<PickedImage[]>([]);
-  const [notify, setNotify] = useState(false);
+  const [sendPush, setSendPush] = useState(true);
+  const [sendEmail, setSendEmail] = useState(true);
+  const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -47,7 +51,8 @@ export default function ManageEvents() {
     setDate(null);
     setExisting([]);
     setFresh([]);
-    setNotify(false);
+    setSendPush(true);
+    setSendEmail(true);
     setError('');
   }
 
@@ -75,6 +80,7 @@ export default function ManageEvents() {
     () =>
       singleFlight(async () => {
         setError('');
+        setNote('');
         if (!title.trim()) return setError(t.auth.required);
         if (!date) return setError(t.admin.dateInvalid);
         setBusy(true);
@@ -94,6 +100,7 @@ export default function ManageEvents() {
             cover_url: cover,
           };
           let eventId: string;
+          let created: { id: string; row: { title: string; description: string | null; location: string | null; starts_at: string } } | null = null;
           if (editing) {
             const { error: err } = await supabase.from('events').update(row).eq('id', editing.id);
             if (err) return setError(t.common.error);
@@ -106,15 +113,7 @@ export default function ManageEvents() {
             const { data, error: err } = await supabase.from('events').insert(row).select('id').single();
             if (err) return setError(t.common.error);
             eventId = data.id;
-            if (notify) {
-              await supabase.functions.invoke('send-push', {
-                body: {
-                  title: row.title,
-                  body: [formatTrDateTime(row.starts_at), row.location].filter(Boolean).join(' · '),
-                  eventId,
-                },
-              });
-            }
+            created = { id: eventId, row };
           }
           if (uploaded.length) {
             const start = existing.length ? Math.max(...existing.map((p) => p.position)) + 1 : 0;
@@ -124,12 +123,26 @@ export default function ManageEvents() {
             if (photoErr) return setError(t.common.error);
           }
           reset();
+          setNote(t.admin.publishedNote);
           await load();
+          if (created && (sendPush || sendEmail)) {
+            // After the post is saved: a failed channel is reported, never undone.
+            const when = formatTrDateTime(created.row.starts_at);
+            const result = await publish({
+              title: created.row.title,
+              body: [when, created.row.location].filter(Boolean).join(' · '),
+              emailText: [when, created.row.location, created.row.description].filter(Boolean).join('\n'),
+              eventId: created.id,
+              push: sendPush,
+              email: sendEmail,
+            });
+            setNote(`${t.admin.publishedNote} ${describePublish(result, t.admin.publishLabels)}`);
+          }
         } finally {
           setBusy(false);
         }
       }),
-    [title, description, location, date, fresh, existing, editing, notify, load],
+    [title, description, location, date, fresh, existing, editing, sendPush, sendEmail, load],
   );
 
   async function remove(e: AppEvent) {
@@ -189,18 +202,9 @@ export default function ManageEvents() {
         </View>
       ) : null}
       <Button title={t.admin.addPhotos} variant="secondary" onPress={addPhotos} />
-      {!editing ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md }}>
-          <Text style={[type.body, { flex: 1 }]}>{t.admin.notifyOnPublish}</Text>
-          <Switch
-            value={notify}
-            onValueChange={setNotify}
-            accessibilityLabel={t.admin.notifyOnPublish}
-            trackColor={{ true: colors.primary, false: colors.border }}
-          />
-        </View>
-      ) : null}
+      {!editing ? <PublishToggles push={sendPush} email={sendEmail} onPush={setSendPush} onEmail={setSendEmail} /> : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
+      {note ? <Text accessibilityRole="alert" style={type.label}>{note}</Text> : null}
       <Button title={editing ? t.admin.update : t.admin.create} onPress={() => submit()} disabled={busy} />
       {editing ? <Button title={t.common.cancel} variant="secondary" onPress={reset} /> : null}
     </Screen>
