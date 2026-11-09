@@ -15,7 +15,10 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "org.aneder.app"
+      "package": "org.aneder.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "single",
@@ -62,6 +65,16 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
-    "owner": "aneders-team"
+    "owner": "aneders-team",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "5850298e-abce-4fdd-9ffa-b680f1ff54f3"
+      }
+    }
   }
 }
