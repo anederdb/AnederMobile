@@ -27,6 +27,13 @@ export type AppEvent = {
   created_at: string;
 };
 
+export type EventPhoto = {
+  id: string;
+  event_id: string;
+  url: string;
+  position: number;
+};
+
 export type Announcement = {
   id: string;
   title: string;

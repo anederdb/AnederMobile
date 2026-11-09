@@ -273,3 +273,50 @@ begin
 
   raise exception 'FIRM OWNERSHIP TESTS PASSED';
 end $$;
+
+-- Event photos: approved members read, only admins write, at most 10 per event.
+do $$
+declare
+  a_id uuid := gen_random_uuid();   -- admin
+  m_id uuid := gen_random_uuid();   -- approved member
+  p_id uuid := gen_random_uuid();   -- pending
+  ev uuid; ev2 uuid;
+  n int;
+begin
+  insert into auth.users (id, email) values (a_id, 'a10@t.test'), (m_id, 'm10@t.test'), (p_id, 'p10@t.test');
+  update public.profiles set role = 'admin', status = 'approved' where id = a_id;
+  update public.profiles set status = 'approved' where id = m_id;
+  insert into public.events (title, starts_at) values ('Test etkinlik', now()) returning id into ev;
+  insert into public.events (title, starts_at) values ('Bos etkinlik', now()) returning id into ev2;
+
+  -- admin writes
+  perform set_config('request.jwt.claims', json_build_object('sub', a_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into public.event_photos (event_id, url, position)
+    select ev, 'https://x.test/' || g || '.jpg', g from generate_series(0, 9) g;
+  begin
+    insert into public.event_photos (event_id, url, position) values (ev, 'https://x.test/11.jpg', 10);
+    raise exception 'an 11th photo was accepted';
+  exception when check_violation then null; end;
+  reset role;
+
+  -- approved member reads, cannot write
+  perform set_config('request.jwt.claims', json_build_object('sub', m_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.event_photos where event_id = ev; assert n = 10, 'member sees event photos';
+  begin
+    insert into public.event_photos (event_id, url) values (ev2, 'https://x.test/hack.jpg');
+    raise exception 'member inserted an event photo';
+  exception when insufficient_privilege then null; end;
+  delete from public.event_photos where event_id = ev;
+  get diagnostics n = row_count; assert n = 0, 'member cannot delete event photos';
+  reset role;
+
+  -- pending sees nothing
+  perform set_config('request.jwt.claims', json_build_object('sub', p_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.event_photos; assert n = 0, 'pending sees no event photos';
+  reset role;
+
+  raise exception 'EVENT PHOTOS TESTS PASSED';
+end $$;
