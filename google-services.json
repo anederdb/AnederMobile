@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "336852828118",
+    "project_id": "aneder-58422",
+    "storage_bucket": "aneder-58422.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:336852828118:android:a5a065ebfe77c69a80ae77",
+        "android_client_info": {
+          "package_name": "org.aneder.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1B7BhBmNJNXyZhw6bcXvA-R0vMoT0X88"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

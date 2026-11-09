@@ -10,3 +10,7 @@ dist/
 expo-env.d.ts
 # @end expo-cli
 .playwright-mcp/
+
+# Firebase / Google service-account private keys must never be committed
+*-firebase-adminsdk-*.json
+service-account*.json
