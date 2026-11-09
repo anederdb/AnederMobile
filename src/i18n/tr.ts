@@ -47,6 +47,9 @@ export const tr = {
     deleteTitle: 'Hesabı sil',
     deleteBody: 'Hesabınız, firmalarınız ve talepleriniz kalıcı olarak silinecek. Bu işlem geri alınamaz.',
     saved: 'Kaydedildi',
+    edit: 'Profili Düzenle',
+    myListings: 'Taleplerim',
+    noListings: 'Henüz talep eklemediniz.',
   },
   firms: {
     title: 'Firmalarım',
