@@ -1,7 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import QRCode from 'react-native-qrcode-svg';
-import { Text, View } from 'react-native';
+import { AppState, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { ErrorText } from '@/components/ui';
@@ -28,9 +28,12 @@ export default function MyQr() {
       };
       refresh();
       const timer = setInterval(refresh, REFRESH_MS);
+      // Timers pause in the background, so the code may have expired by the time the app is reopened.
+      const sub = AppState.addEventListener('change', (state) => state === 'active' && refresh());
       return () => {
         active = false;
         clearInterval(timer);
+        sub.remove();
       };
     }, []),
   );

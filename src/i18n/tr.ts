@@ -137,7 +137,7 @@ export const tr = {
     notifyOnPublish: 'Bildirim gönder',
     emailOnPublish: 'E-posta gönder',
     publishedNote: 'Yayınlandı.',
-    publishLabels: { push: 'Bildirim', email: 'E-posta', failed: 'gönderilemedi' },
+    publishLabels: { push: 'Bildirim', email: 'E-posta', failed: 'gönderilemedi', none: 'alıcı yok' },
     removePhoto: 'Fotoğrafı Kaldır',
     uploadFailed: 'Fotoğraf yüklenemedi. Lütfen tekrar deneyin.',
   },

@@ -1,4 +1,4 @@
-import { publish } from './notify';
+import { describePublish, publish } from './notify';
 import { supabase } from './supabase';
 
 jest.mock('./supabase', () => ({ supabase: { functions: { invoke: jest.fn() } } }));
@@ -45,5 +45,37 @@ describe('publish', () => {
     const result = await publish({ ...base, push: true, email: false });
     expect(result.push).toEqual({ sent: 0, failed: 0 });
     expect(result.errors).toEqual([]);
+  });
+});
+
+const labels = { push: 'Bildirim', email: 'E-posta', failed: 'gönderilemedi', none: 'alıcı yok' };
+
+describe('describePublish', () => {
+  it('says "no recipients" when nothing was sent and nothing failed', () => {
+    expect(describePublish({ push: { sent: 0, failed: 0 }, email: null, errors: [] }, labels)).toBe('Bildirim: alıcı yok');
+  });
+
+  it('says "failed" when everything failed, not "0"', () => {
+    expect(describePublish({ push: null, email: { sent: 0, failed: 5 }, errors: [] }, labels)).toBe('E-posta: gönderilemedi (5)');
+  });
+
+  it('shows partial failures next to the sent count', () => {
+    expect(describePublish({ push: { sent: 8, failed: 2 }, email: null, errors: [] }, labels)).toBe('Bildirim: 8 (2 gönderilemedi)');
+  });
+
+  it('reports a channel that errored outright', () => {
+    expect(describePublish({ push: null, email: null, errors: ['push'] }, labels)).toBe('Bildirim: gönderilemedi');
+  });
+});
+
+describe('publish limits', () => {
+  it('shortens long push text to what send-push accepts (title 100, body 500) but not the email', async () => {
+    invoke.mockResolvedValue({ data: { sent: 1, failed: 0 }, error: null });
+    await publish({ title: 'T'.repeat(150), body: 'B'.repeat(900), push: true, email: true });
+    const push = invoke.mock.calls.find((c) => c[0] === 'send-push')![1].body;
+    const email = invoke.mock.calls.find((c) => c[0] === 'send-email')![1].body;
+    expect(push.title.length).toBe(100);
+    expect(push.body.length).toBe(500);
+    expect(email.text.length).toBe(900);
   });
 });

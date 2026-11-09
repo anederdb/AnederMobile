@@ -120,7 +120,11 @@ export default function ManageEvents() {
             const { error: photoErr } = await supabase
               .from('event_photos')
               .insert(uploaded.map((url, i) => ({ event_id: eventId, url, position: start + i })));
-            if (photoErr) return setError(t.common.error);
+            if (photoErr) {
+              // The event row exists: switch to editing it so a retry updates it instead of creating a second one.
+              if (!editing) setEditing({ ...row, id: eventId, created_at: new Date().toISOString() });
+              return setError(t.common.error);
+            }
           }
           reset();
           setNote(t.admin.publishedNote);

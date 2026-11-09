@@ -32,7 +32,7 @@ async function call(name: string, body: Record<string, unknown>): Promise<SendRe
 /** Sends the chosen channels after a post is saved. Never throws: a failed channel is reported, not raised. */
 export async function publish(opts: Options): Promise<PublishResult> {
   const [push, email] = await Promise.all([
-    opts.push ? call('send-push', { title: opts.title, body: opts.body, eventId: opts.eventId }) : null,
+    opts.push ? call('send-push', { title: opts.title.slice(0, 100), body: opts.body.slice(0, 500), eventId: opts.eventId }) : null,
     opts.email ? call('send-email', { subject: opts.title, text: opts.emailText ?? opts.body }) : null,
   ]);
   const errors: PublishResult['errors'] = [];
@@ -41,11 +41,18 @@ export async function publish(opts: Options): Promise<PublishResult> {
   return { push, email, errors };
 }
 
-/** One line for the admin after publishing, e.g. "Bildirim: 12 cihaz · E-posta: 40 gönderildi". */
-export function describePublish(r: PublishResult, labels: { push: string; email: string; failed: string }): string {
+type Labels = { push: string; email: string; failed: string; none: string };
+
+/** One line for the admin after publishing, e.g. "Bildirim: 12 · E-posta: gönderilemedi (3)". Never a bare "0". */
+export function describePublish(r: PublishResult, labels: Labels): string {
+  const part = (name: string, res: SendResult) => {
+    if (res.sent === 0 && res.failed === 0) return `${name}: ${labels.none}`;
+    if (res.sent === 0) return `${name}: ${labels.failed} (${res.failed})`;
+    return `${name}: ${res.sent}${res.failed ? ` (${res.failed} ${labels.failed})` : ''}`;
+  };
   const parts: string[] = [];
-  if (r.push) parts.push(`${labels.push}: ${r.push.sent}`);
-  if (r.email) parts.push(`${labels.email}: ${r.email.sent}`);
+  if (r.push) parts.push(part(labels.push, r.push));
+  if (r.email) parts.push(part(labels.email, r.email));
   for (const e of r.errors) parts.push(`${labels[e]}: ${labels.failed}`);
   return parts.join(' · ');
 }

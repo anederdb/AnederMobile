@@ -1,5 +1,5 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
@@ -7,6 +7,7 @@ import { Button, Chip, Field } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { formatTrDateTime } from '@/lib/dates';
 import { parseQrPayload } from '@/lib/qr';
+import { createScanGate } from '@/lib/scanGate';
 import { supabase } from '@/lib/supabase';
 import type { AppEvent } from '@/lib/types';
 import { colors, radius, space, type } from '@/theme';
@@ -31,6 +32,7 @@ export default function Scan() {
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [busy, setBusy] = useState(false);
   const [pasted, setPasted] = useState('');
+  const gate = useRef(createScanGate()).current;
 
   useEffect(() => {
     supabase
@@ -45,9 +47,11 @@ export default function Scan() {
       });
   }, []);
 
-  // One scan at a time: while a result is showing (or a check is running) the camera ignores codes.
+  // One scan at a time. The gate is synchronous: the camera reports the same code several times
+  // before React re-renders, and state alone would let each of them through. It stays closed
+  // while a result is on screen and reopens with "Sonraki Tarama".
   async function handle(raw: string) {
-    if (busy || outcome || !eventId) return;
+    if (!eventId || !gate.enter()) return;
     setBusy(true);
     const token = parseQrPayload(raw);
     if (!token) {
@@ -58,6 +62,11 @@ export default function Scan() {
     setBusy(false);
     if (error || !data) return setOutcome({ status: 'error' });
     setOutcome({ status: data.status, name: data.member_name });
+  }
+
+  function next() {
+    setOutcome(null);
+    gate.release();
   }
 
   const scanning = !outcome && !busy;
@@ -80,7 +89,7 @@ export default function Scan() {
           {outcome.name ? <Text style={[type.heading, { color: '#FFFFFF' }]}>{outcome.name}</Text> : null}
         </View>
       ) : null}
-      {outcome ? <Button title={t.qr.next} onPress={() => setOutcome(null)} /> : null}
+      {outcome ? <Button title={t.qr.next} onPress={next} /> : null}
 
       {useCamera && eventId && !outcome ? (
         permission?.granted ? (
