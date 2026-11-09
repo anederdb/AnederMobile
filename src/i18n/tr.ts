@@ -147,6 +147,17 @@ export const tr = {
     invalidNumber: 'Fiyat ve m² sayı olmalı.',
     sqm: 'm²',
   },
+  about: {
+    entry: 'Hakkımızda',
+    president: {
+      title: 'Başkan Mesajı',
+      body: 'Şablon metin: Sevgili meslektaşlarım, ANEDER ailesi olarak Ankara emlak sektörünün gelişmesi için birlikte çalışıyoruz. Gerçek Başkan mesajı yönetim tarafından sağlanacaktır.',
+    },
+    association: {
+      title: 'Hakkımızda',
+      body: 'Şablon metin: Ankara Emlakçılar Derneği (ANEDER), Ankara’daki gayrimenkul danışmanlarını bir araya getiren meslek kuruluşudur. Gerçek tanıtım metni yönetim tarafından sağlanacaktır.',
+    },
+  },
   members: {
     title: 'Üyeler',
     search: 'Üye veya firma ara',

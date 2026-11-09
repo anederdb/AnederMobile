@@ -4,7 +4,7 @@ import { Pressable, Text } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { TitleLabel } from '@/components/TitleLabel';
-import { Field } from '@/components/ui';
+import { Button, Field } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { matchesMember } from '@/lib/memberSearch';
 import { supabase } from '@/lib/supabase';
@@ -42,6 +42,7 @@ export default function Members() {
   return (
     <Screen>
       <Text style={type.display}>{t.members.title}</Text>
+      <Button title={t.about.entry} variant="secondary" onPress={() => router.push('/uyeler/hakkimizda')} />
       <Field label={t.members.search} value={query} onChangeText={setQuery} autoCapitalize="none" />
       {rows === null ? <Text style={type.caption}>{t.common.loading}</Text> : null}
       {rows && visible.length === 0 ? <Text style={type.body}>{t.members.empty}</Text> : null}
