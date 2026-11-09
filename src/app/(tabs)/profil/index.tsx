@@ -70,6 +70,10 @@ export default function Profile() {
       <TitleLabel title={profile.title} />
       {profile.phone ? <Text style={type.body}>{profile.phone}</Text> : null}
       <Button title={t.profile.edit} variant="secondary" onPress={() => router.push('/profil/edit')} />
+      <Button title={t.qr.openMy} variant="secondary" onPress={() => router.push('/profil/qr')} />
+      {profile.role === 'admin' || profile.role === 'scanner' ? (
+        <Button title={t.qr.openScan} variant="secondary" onPress={() => router.push('/profil/scan')} />
+      ) : null}
       <Link href="/profil/firms" asChild>
         <Button title={t.profile.firms} variant="secondary" onPress={() => {}} />
       </Link>
@@ -97,6 +101,9 @@ export default function Profile() {
           </Link>
           <Link href="/admin/announcements" asChild>
             <Button title={t.admin.announcements} variant="secondary" onPress={() => {}} />
+          </Link>
+          <Link href="/admin/attendance" asChild>
+            <Button title={t.qr.attendance} variant="secondary" onPress={() => {}} />
           </Link>
           <Link href="/admin/offers" asChild>
             <Button title={t.admin.offers} variant="secondary" onPress={() => {}} />

@@ -42,6 +42,13 @@
         {
           "photosPermission": "Etkinlik fotoğrafları eklemek için fotoğraf galerinize erişim gerekir."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Üyelerin QR kodlarını okumak için kameraya erişim gerekir.",
+          "recordAudioAndroid": false
+        }
       ]
     ],
     "experiments": {
