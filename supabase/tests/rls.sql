@@ -389,3 +389,46 @@ begin
   assert ts is null and ec = false, 'no consent without metadata';
   raise exception 'CONSENT TESTS PASSED';
 end $$;
+
+-- Offers (Üyelere Özel): approved members read, only admins write, bad links rejected.
+do $$
+declare
+  a_id uuid := gen_random_uuid();
+  m_id uuid := gen_random_uuid();
+  p_id uuid := gen_random_uuid();
+  o uuid;
+  n int;
+begin
+  insert into auth.users (id, email) values (a_id, 'a13@t.test'), (m_id, 'm13@t.test'), (p_id, 'p13@t.test');
+  update public.profiles set role = 'admin', status = 'approved' where id = a_id;
+  update public.profiles set status = 'approved' where id = m_id;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', a_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into public.offers (sponsor, title, link) values ('Sponsor A', '%10 indirim', 'https://aneder.org') returning id into o;
+  begin
+    insert into public.offers (sponsor, title, link) values ('Sponsor B', 'kotu', 'javascript:alert(1)');
+    raise exception 'non-http offer link accepted';
+  exception when check_violation then null; end;
+  update public.offers set title = '%15 indirim' where id = o;
+  get diagnostics n = row_count; assert n = 1, 'admin edits offer';
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', m_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.offers; assert n = 1, 'member reads offers';
+  begin
+    insert into public.offers (sponsor, title) values ('X', 'Y');
+    raise exception 'member inserted an offer';
+  exception when insufficient_privilege then null; end;
+  delete from public.offers where id = o;
+  get diagnostics n = row_count; assert n = 0, 'member cannot delete offers';
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', p_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.offers; assert n = 0, 'pending sees no offers';
+  reset role;
+
+  raise exception 'OFFERS TESTS PASSED';
+end $$;

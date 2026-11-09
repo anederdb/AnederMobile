@@ -98,6 +98,9 @@ export default function Profile() {
           <Link href="/admin/announcements" asChild>
             <Button title={t.admin.announcements} variant="secondary" onPress={() => {}} />
           </Link>
+          <Link href="/admin/offers" asChild>
+            <Button title={t.admin.offers} variant="secondary" onPress={() => {}} />
+          </Link>
           <Link href="/admin/send-push" asChild>
             <Button title={t.admin.sendPush} variant="secondary" onPress={() => {}} />
           </Link>

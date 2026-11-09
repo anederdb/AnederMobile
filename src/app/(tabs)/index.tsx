@@ -4,18 +4,20 @@ import { Text, View } from 'react-native';
 
 import { Empty, EventCard, SectionTitle } from '@/components/EventCard';
 import { Logo } from '@/components/Logo';
+import { OfferCard } from '@/components/OfferCard';
 import { Screen } from '@/components/Screen';
 import { t } from '@/i18n/tr';
 import { formatTrDateTime } from '@/lib/dates';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
-import type { Announcement, AppEvent } from '@/lib/types';
+import type { Announcement, AppEvent, Offer } from '@/lib/types';
 import { colors, radius, space, type } from '@/theme';
 
 export default function Home() {
   const { profile } = useSession();
   const [next, setNext] = useState<AppEvent | null>(null);
   const [news, setNews] = useState<Announcement[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -32,6 +34,14 @@ export default function Home() {
         .order('created_at', { ascending: false })
         .limit(3)
         .then(({ data }) => setNews((data as Announcement[]) ?? []));
+      const d = new Date();
+      const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      supabase
+        .from('offers')
+        .select('*')
+        .or(`valid_until.is.null,valid_until.gte.${today}`)
+        .order('created_at', { ascending: false })
+        .then(({ data }) => setOffers((data as Offer[]) ?? []));
     }, []),
   );
 
@@ -46,6 +56,14 @@ export default function Home() {
       </View>
       <SectionTitle>{t.events.next}</SectionTitle>
       {next ? <EventCard event={next} /> : <Empty>{t.events.empty}</Empty>}
+      {offers.length > 0 ? (
+        <>
+          <SectionTitle>{t.offers.section}</SectionTitle>
+          {offers.map((o) => (
+            <OfferCard key={o.id} offer={o} />
+          ))}
+        </>
+      ) : null}
       <SectionTitle>{t.announcements.title}</SectionTitle>
       {news.length === 0 ? <Empty>{t.announcements.empty}</Empty> : null}
       {news.map((a) => (

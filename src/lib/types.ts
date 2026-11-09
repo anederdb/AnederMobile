@@ -61,3 +61,13 @@ export type Listing = {
   description: string | null;
   created_at: string;
 };
+
+export type Offer = {
+  id: string;
+  sponsor: string;
+  title: string;
+  description: string | null;
+  link: string | null;
+  valid_until: string | null;
+  created_at: string;
+};
