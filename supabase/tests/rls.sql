@@ -432,3 +432,108 @@ begin
 
   raise exception 'OFFERS TESTS PASSED';
 end $$;
+
+-- QR check-in: single-use short-lived tokens, scanner-only check_in, admin-only attendance.
+do $$
+declare
+  adm uuid := gen_random_uuid();
+  scn uuid := gen_random_uuid();   -- approved scanner
+  mem uuid := gen_random_uuid();   -- approved member being scanned
+  plain uuid := gen_random_uuid(); -- approved member, not a scanner
+  pend uuid := gen_random_uuid();  -- pending
+  ev uuid;
+  t1 text; t2 text; t3 text;
+  r jsonb;
+  n int;
+begin
+  insert into auth.users (id, email) values
+    (adm, 'a14@t.test'), (scn, 's14@t.test'), (mem, 'm14@t.test'), (plain, 'pl14@t.test'), (pend, 'p14@t.test');
+  update public.profiles set role = 'admin', status = 'approved' where id = adm;
+  update public.profiles set role = 'scanner', status = 'approved' where id = scn;
+  update public.profiles set status = 'approved', full_name = 'Ali Veli' where id = mem;
+  update public.profiles set status = 'approved' where id = plain;
+  insert into public.events (title, starts_at) values ('Kapi', now()) returning id into ev;
+  -- a token that belongs to the pending member
+  insert into public.qr_tokens (token, user_id, expires_at) values ('pendtok', pend, now() + interval '1 minute');
+
+  -- pending members cannot get a QR
+  perform set_config('request.jwt.claims', json_build_object('sub', pend, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.issue_qr_token();
+    raise exception 'pending member got a QR token';
+  exception when insufficient_privilege then null; end;
+  reset role;
+
+  -- approved member gets a token and cannot read the token table
+  perform set_config('request.jwt.claims', json_build_object('sub', mem, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  t1 := public.issue_qr_token();
+  assert length(t1) >= 32, 'token is long enough to be unguessable';
+  select count(*) into n from public.qr_tokens; assert n = 0, 'members cannot read qr_tokens';
+  reset role;
+
+  -- a plain member cannot check anyone in
+  perform set_config('request.jwt.claims', json_build_object('sub', plain, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.check_in(ev, t1);
+    raise exception 'plain member scanned';
+  exception when insufficient_privilege then null; end;
+  reset role;
+
+  -- scanner: ok, then the same token is spent, then a fresh token is "already"
+  perform set_config('request.jwt.claims', json_build_object('sub', scn, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  r := public.check_in(ev, t1);
+  assert r ->> 'status' = 'ok' and r ->> 'member_name' = 'Ali Veli', 'first scan checks in';
+  r := public.check_in(ev, t1);
+  assert r ->> 'status' = 'invalid', 'a used token is rejected';
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', mem, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  t2 := public.issue_qr_token();
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', scn, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  r := public.check_in(ev, t2);
+  assert r ->> 'status' = 'already', 'second scan of the same member is already';
+  reset role;
+
+  -- expired token
+  perform set_config('request.jwt.claims', json_build_object('sub', mem, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  t3 := public.issue_qr_token();
+  reset role;
+  update public.qr_tokens set expires_at = now() - interval '1 second' where token = t3;
+  perform set_config('request.jwt.claims', json_build_object('sub', scn, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  r := public.check_in(ev, t3);
+  assert r ->> 'status' = 'invalid', 'expired token is rejected';
+  r := public.check_in(ev, 'pendtok');
+  assert r ->> 'status' = 'invalid', 'token of a pending member is rejected';
+  r := public.check_in(ev, 'does-not-exist');
+  assert r ->> 'status' = 'invalid', 'unknown token is rejected';
+  select count(*) into n from public.event_checkins; assert n = 0, 'scanners cannot read the attendance list';
+  reset role;
+
+  -- admin reads and removes
+  perform set_config('request.jwt.claims', json_build_object('sub', adm, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.event_checkins where event_id = ev; assert n = 1, 'admin sees one check-in';
+  perform public.remove_check_in(ev, mem);
+  select count(*) into n from public.event_checkins where event_id = ev; assert n = 0, 'admin removed the check-in';
+  reset role;
+
+  -- a plain member cannot remove one
+  perform set_config('request.jwt.claims', json_build_object('sub', plain, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.remove_check_in(ev, mem);
+    raise exception 'plain member removed a check-in';
+  exception when insufficient_privilege then null; end;
+  reset role;
+
+  raise exception 'QR TESTS PASSED';
+end $$;
