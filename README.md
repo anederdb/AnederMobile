@@ -17,7 +17,7 @@ npx expo start --web     # or: npx expo start, then open on a phone
 - Design: `docs/superpowers/specs/2026-11-04-anader-mobile-design.md`
 - Plan: `docs/superpowers/plans/2026-11-04-anader-mobile.md`
 - Feedback round 1: `docs/superpowers/specs/2026-11-09-feedback-round-design.md` and `docs/superpowers/plans/2026-11-09-feedback-round.md`
-- Screenshots of each build step: `screenshots/`
+- Screenshots of the current app (phone width): `screenshots/round-2-ui-refresh/`
 
 ## Push notifications
 
