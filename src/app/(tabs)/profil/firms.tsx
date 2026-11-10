@@ -9,7 +9,7 @@ import { normalizeSahibindenUrl } from '@/lib/sahibinden';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import type { Firm } from '@/lib/types';
-import { colors, radius, space, type } from '@/theme';
+import { card, colors, space, type } from '@/theme';
 
 export default function Firms() {
   const { profile } = useSession();
@@ -74,7 +74,7 @@ export default function Firms() {
       {firms.map((firm) => (
         <View
           key={firm.id}
-          style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
+          style={{ ...card, gap: space.sm }}>
           <Text style={type.heading}>{firm.name}</Text>
           {firm.district ? <Text style={type.caption}>{firm.district}</Text> : null}
           {firm.sahibinden_url ? (

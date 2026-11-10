@@ -2,8 +2,9 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Text } from 'react-native';
 
-import { Empty, EventCard, SectionTitle } from '@/components/EventCard';
+import { EventCard, SectionTitle } from '@/components/EventCard';
 import { Screen } from '@/components/Screen';
+import { EmptyState, Skeleton } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { supabase } from '@/lib/supabase';
 import type { AppEvent } from '@/lib/types';
@@ -29,8 +30,13 @@ export default function Events() {
   return (
     <Screen>
       <Text style={type.display}>{t.events.title}</Text>
-      {events === null ? <Text style={type.caption}>{t.common.loading}</Text> : null}
-      {events && events.length === 0 ? <Empty>{t.events.empty}</Empty> : null}
+      {events === null ? (
+        <>
+          <Skeleton height={96} />
+          <Skeleton height={96} />
+        </>
+      ) : null}
+      {events && events.length === 0 ? <EmptyState icon="calendar-outline" title={t.events.empty} /> : null}
       {upcoming.length > 0 ? <SectionTitle>{t.events.upcoming}</SectionTitle> : null}
       {upcoming.map((e) => (
         <EventCard key={e.id} event={e} />

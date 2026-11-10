@@ -1,18 +1,20 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Linking, Text, View } from 'react-native';
 
-import { ListingCard } from '@/components/ListingCard';
+import { Avatar } from '@/components/Avatar';
 import { ContactActions } from '@/components/ContactActions';
+import { ListingCard } from '@/components/ListingCard';
 import { Screen } from '@/components/Screen';
-import { Button } from '@/components/ui';
+import { Badge, Button, Card, InfoRow, Skeleton } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { confirm } from '@/lib/confirm';
 import { formatPriceRange } from '@/lib/listingFilters';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import type { Firm, Listing, Profile } from '@/lib/types';
-import { colors, radius, space, type } from '@/theme';
+import { card, colors, space, type } from '@/theme';
 
 export default function ListingDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -44,7 +46,9 @@ export default function ListingDetail() {
   if (!listing) {
     return (
       <Screen>
-        <Text style={type.caption}>{t.common.loading}</Text>
+        <Skeleton height={36} />
+        <Skeleton height={56} />
+        <Skeleton height={120} />
       </Screen>
     );
   }
@@ -61,26 +65,35 @@ export default function ListingDetail() {
 
   return (
     <Screen>
+      <Badge label={listing.type === 'satilik' ? t.listings.sale : t.listings.rent} tone={listing.type === 'satilik' ? 'success' : 'info'} />
       <Text style={[type.display, { color: colors.primary }]}>{formatPriceRange(listing.min_price, listing.max_price) ?? '—'}</Text>
       <Text style={type.title}>{listing.title}</Text>
-      <Text style={type.label}>{listing.type === 'satilik' ? t.listings.sale : t.listings.rent}</Text>
-      {place ? <Text style={type.body}>{place}</Text> : null}
-      {specs ? <Text style={type.body}>{specs}</Text> : null}
+      {place || specs ? (
+        <Card style={{ gap: space.md }}>
+          {place ? <InfoRow icon="location-outline" text={place} /> : null}
+          {specs ? <InfoRow icon="home-outline" text={specs} /> : null}
+        </Card>
+      ) : null}
       {listing.description ? <Text style={type.body}>{listing.description}</Text> : null}
       {listing.link ? (
-        <Text
-          accessibilityRole="link"
-          style={{ color: colors.primary, fontWeight: '600', paddingVertical: space.xs }}
-          onPress={() => Linking.openURL(listing.link!)}>
-          {t.listings.openLink}
-        </Text>
+        <Button
+          title={t.listings.openLink}
+          variant="secondary"
+          icon={<Ionicons name="open-outline" size={20} color={colors.ink} />}
+          onPress={() => Linking.openURL(listing.link!)}
+        />
       ) : null}
 
       {owner ? (
-        <View style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
+        <View style={{ ...card, gap: space.sm }}>
           <Text style={type.label}>{t.listings.contact}</Text>
-          <Text style={type.heading}>{owner.full_name}</Text>
-          {firm ? <Text style={type.caption}>{firm.name}</Text> : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+            <Avatar url={owner.avatar_url} name={owner.full_name} size={52} />
+            <View style={{ flex: 1 }}>
+              <Text style={type.heading}>{owner.full_name}</Text>
+              {firm ? <Text style={type.caption}>{firm.name}</Text> : null}
+            </View>
+          </View>
           {owner.phone ? <ContactActions phone={owner.phone} /> : null}
           {firm?.sahibinden_url ? (
             <Text

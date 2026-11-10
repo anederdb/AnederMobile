@@ -54,6 +54,7 @@ export default function Register() {
       <View style={{ alignItems: 'center', gap: space.sm }}>
         <Avatar url={photo?.uri} name={fullName} size={96} />
         <Button title={photo ? t.auth.photoChange : t.auth.photoChoose} variant="secondary" onPress={async () => setPhoto((await pickAvatar()) ?? photo)} />
+        {!photo ? <Text style={type.caption}>{t.auth.photoHint}</Text> : null}
       </View>
       <Field label={t.auth.fullName} value={fullName} onChangeText={setFullName} autoCapitalize="words" autoComplete="name" />
       <Field label={t.auth.phone} value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" />
@@ -74,7 +75,7 @@ export default function Register() {
       </Checkbox>
       {error ? <ErrorText>{error}</ErrorText> : null}
       {notice ? <Text accessibilityRole="alert" style={type.label}>{notice}</Text> : null}
-      <Button title={t.auth.register} onPress={submit} disabled={busy} />
+      <Button title={t.auth.register} onPress={submit} loading={busy} />
       <Link href="/login" style={{ textAlign: 'center', color: colors.primary, fontWeight: '600', paddingVertical: space.sm }}>
         {t.auth.toLogin}
       </Link>

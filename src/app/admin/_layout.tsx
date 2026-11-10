@@ -10,6 +10,8 @@ export default function AdminLayout() {
         headerTintColor: colors.primary,
         headerTitleStyle: { color: colors.ink },
         headerStyle: { backgroundColor: colors.background },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.background },
         headerBackButtonDisplayMode: 'minimal',
       }}>
       <Stack.Screen name="events" options={{ title: t.admin.events }} />

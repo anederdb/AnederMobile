@@ -45,7 +45,7 @@ export default function SendPush() {
       />
       {error ? <ErrorText>{error}</ErrorText> : null}
       {result ? <Text accessibilityRole="alert" style={type.heading}>{result}</Text> : null}
-      <Button title={t.admin.pushSend} onPress={submit} disabled={busy} />
+      <Button title={t.admin.pushSend} onPress={submit} loading={busy} />
     </Screen>
   );
 }

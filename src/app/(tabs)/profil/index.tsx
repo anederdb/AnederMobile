@@ -1,18 +1,28 @@
-import { Link, useFocusEffect, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { ListingCard } from '@/components/ListingCard';
 import { Screen } from '@/components/Screen';
 import { TitleLabel } from '@/components/TitleLabel';
-import { Button, ErrorText } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, ErrorText, ListGroup, ListRow, SectionHeader } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { confirm } from '@/lib/confirm';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import type { Listing } from '@/lib/types';
-import { colors, radius, space, type } from '@/theme';
+import { colors, space, type } from '@/theme';
+
+function ContactLine({ icon, text }: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <Ionicons name={icon} size={16} color={colors.muted} />
+      <Text style={[type.body, { flex: 1 }]}>{text}</Text>
+    </View>
+  );
+}
 
 export default function Profile() {
   const { profile, session } = useSession();
@@ -52,42 +62,39 @@ export default function Profile() {
     await supabase.auth.signOut({ scope: 'local' }); // the user no longer exists server-side
   }
 
+  const canScan = profile.role === 'admin' || profile.role === 'scanner';
+
   return (
     <Screen>
       <Text style={type.display}>{t.profile.title}</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t.auth.photoChange} onPress={() => router.push('/profil/edit')}>
-          <Avatar url={profile.avatar_url} name={profile.full_name} size={88} />
-        </Pressable>
-        <View style={{ flex: 1, gap: space.xs }}>
-          <Text style={type.title}>{profile.full_name}</Text>
-          <TitleLabel title={profile.title} />
-          {profile.phone ? <Text style={type.body}>{profile.phone}</Text> : null}
-          {session?.user.email ? <Text style={type.body}>{session.user.email}</Text> : null}
+
+      <Card style={{ gap: space.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+          <Avatar url={profile.avatar_url} name={profile.full_name} size={80} />
+          <View style={{ flex: 1, gap: space.xs }}>
+            <Text style={type.title}>{profile.full_name}</Text>
+            <TitleLabel title={profile.title} />
+          </View>
         </View>
-      </View>
-      <View
-        style={{
-          alignSelf: 'flex-start',
-          backgroundColor: colors.surface,
-          borderRadius: radius.pill,
-          paddingHorizontal: space.md,
-          paddingVertical: space.xs,
-        }}>
-        <Text style={type.label}>
-          {t.profile.role[profile.role]} · {t.profile.status[profile.status]}
-        </Text>
-      </View>
-      <Button title={t.profile.edit} variant="secondary" onPress={() => router.push('/profil/edit')} />
-      <Button title={t.qr.openMy} variant="secondary" onPress={() => router.push('/profil/qr')} />
-      {profile.role === 'admin' || profile.role === 'scanner' ? (
-        <Button title={t.qr.openScan} variant="secondary" onPress={() => router.push('/profil/scan')} />
-      ) : null}
-      <Link href="/profil/firms" asChild>
-        <Button title={t.profile.firms} variant="secondary" onPress={() => {}} />
-      </Link>
-      <Text style={[type.title, { marginTop: space.md }]}>{t.profile.myListings}</Text>
-      {mine.length === 0 ? <Text style={type.body}>{t.profile.noListings}</Text> : null}
+        <View style={{ gap: space.sm }}>
+          {profile.phone ? <ContactLine icon="call-outline" text={profile.phone} /> : null}
+          {session?.user.email ? <ContactLine icon="mail-outline" text={session.user.email} /> : null}
+        </View>
+        <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
+          <Badge label={t.profile.role[profile.role]} tone="neutral" />
+          <Badge label={t.profile.status[profile.status]} tone={profile.status === 'approved' ? 'success' : 'info'} />
+        </View>
+      </Card>
+
+      <ListGroup>
+        <ListRow icon="create-outline" title={t.profile.edit} onPress={() => router.push('/profil/edit')} />
+        <ListRow icon="qr-code-outline" title={t.qr.openMy} onPress={() => router.push('/profil/qr')} />
+        {canScan ? <ListRow icon="scan-outline" title={t.qr.openScan} onPress={() => router.push('/profil/scan')} /> : null}
+        <ListRow icon="business-outline" title={t.profile.firms} onPress={() => router.push('/profil/firms')} />
+      </ListGroup>
+
+      <SectionHeader title={t.profile.myListings} />
+      {mine.length === 0 ? <EmptyState icon="document-text-outline" title={t.profile.noListings} /> : null}
       {mine.map((l) => (
         <View key={l.id} style={{ gap: space.sm }}>
           <ListingCard listing={l} />
@@ -102,31 +109,23 @@ export default function Profile() {
         </View>
       ))}
       {message ? <ErrorText>{message}</ErrorText> : null}
+
       {profile.role === 'admin' ? (
         <>
-          <Text style={[type.title, { marginTop: space.md }]}>{t.admin.title}</Text>
-          <Link href="/admin/events" asChild>
-            <Button title={t.admin.events} variant="secondary" onPress={() => {}} />
-          </Link>
-          <Link href="/admin/announcements" asChild>
-            <Button title={t.admin.announcements} variant="secondary" onPress={() => {}} />
-          </Link>
-          <Link href="/admin/attendance" asChild>
-            <Button title={t.qr.attendance} variant="secondary" onPress={() => {}} />
-          </Link>
-          <Link href="/admin/offers" asChild>
-            <Button title={t.admin.offers} variant="secondary" onPress={() => {}} />
-          </Link>
-          <Link href="/admin/send-push" asChild>
-            <Button title={t.admin.sendPush} variant="secondary" onPress={() => {}} />
-          </Link>
-          <Link href="/admin/members" asChild>
-            <Button title={t.admin.members} variant="secondary" onPress={() => {}} />
-          </Link>
+          <SectionHeader title={t.admin.title} />
+          <ListGroup>
+            <ListRow icon="calendar-outline" title={t.admin.events} onPress={() => router.push('/admin/events')} />
+            <ListRow icon="megaphone-outline" title={t.admin.announcements} onPress={() => router.push('/admin/announcements')} />
+            <ListRow icon="checkmark-done-outline" title={t.qr.attendance} onPress={() => router.push('/admin/attendance')} />
+            <ListRow icon="pricetag-outline" title={t.admin.offers} onPress={() => router.push('/admin/offers')} />
+            <ListRow icon="notifications-outline" title={t.admin.sendPush} onPress={() => router.push('/admin/send-push')} />
+            <ListRow icon="people-outline" title={t.admin.members} onPress={() => router.push('/admin/members')} />
+          </ListGroup>
         </>
       ) : null}
-      <View style={{ height: space.md }} />
-      <Button title={t.auth.logout} variant="secondary" onPress={() => supabase.auth.signOut()} />
+
+      <View style={{ height: space.sm }} />
+      <Button title={t.auth.logout} variant="secondary" icon={<Ionicons name="log-out-outline" size={20} color={colors.ink} />} onPress={() => supabase.auth.signOut()} />
       <Button title={t.profile.deleteAccount} variant="danger" onPress={deleteAccount} />
     </Screen>
   );

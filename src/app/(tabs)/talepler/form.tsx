@@ -171,7 +171,7 @@ export default function ListingForm() {
       ) : null}
 
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <Button title={t.common.save} onPress={() => submit()} disabled={busy} />
+      <Button title={t.common.save} onPress={() => submit()} loading={busy} />
     </Screen>
   );
 }

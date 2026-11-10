@@ -12,7 +12,7 @@ import { singleFlight } from '@/lib/singleFlight';
 import { supabase } from '@/lib/supabase';
 import { TITLE_SUGGESTIONS } from '@/lib/titles';
 import type { Profile } from '@/lib/types';
-import { colors, radius, space, type } from '@/theme';
+import { card, space, type } from '@/theme';
 
 const ROLES = ['member', 'scanner', 'admin'] as const;
 
@@ -35,7 +35,7 @@ function MemberRoleEditor({ member, isSelf, onSaved }: { member: Profile; isSelf
   );
   const changed = role !== member.role || (title.trim() || null) !== member.title;
   return (
-    <View style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
+    <View style={{ ...card, gap: space.sm }}>
       <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
         <Avatar url={member.avatar_url} name={member.full_name} size={48} />
         <Text style={type.heading}>{member.full_name}</Text>
@@ -89,7 +89,7 @@ export default function PendingMembers() {
     <Screen>
       {pending.length === 0 ? <Empty>{t.admin.noPending}</Empty> : null}
       {pending.map((p) => (
-        <View key={p.id} style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
+        <View key={p.id} style={{ ...card, gap: space.sm }}>
           <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
             <Avatar url={p.avatar_url} name={p.full_name} size={64} />
             <View style={{ flex: 1 }}>

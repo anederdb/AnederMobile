@@ -7,12 +7,13 @@ import { colors } from '@/theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-const screens: { name: string; title: string; icon: IconName }[] = [
-  { name: 'index', title: t.tabs.home, icon: 'home-outline' },
-  { name: 'etkinlikler', title: t.tabs.events, icon: 'calendar-outline' },
-  { name: 'talepler', title: t.tabs.listings, icon: 'business-outline' },
-  { name: 'uyeler', title: t.tabs.members, icon: 'people-outline' },
-  { name: 'profil', title: t.tabs.profile, icon: 'person-outline' },
+// Outline when idle, filled when selected (not color alone).
+const screens: { name: string; title: string; icon: IconName; iconActive: IconName }[] = [
+  { name: 'index', title: t.tabs.home, icon: 'home-outline', iconActive: 'home' },
+  { name: 'etkinlikler', title: t.tabs.events, icon: 'calendar-outline', iconActive: 'calendar' },
+  { name: 'talepler', title: t.tabs.listings, icon: 'business-outline', iconActive: 'business' },
+  { name: 'uyeler', title: t.tabs.members, icon: 'people-outline', iconActive: 'people' },
+  { name: 'profil', title: t.tabs.profile, icon: 'person-outline', iconActive: 'person' },
 ];
 
 export default function TabsLayout() {
@@ -22,21 +23,21 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
         tabBarStyle: {
-          backgroundColor: colors.background,
+          backgroundColor: colors.surface,
           borderTopColor: colors.border,
           // web has no safe-area insets, so give the labels room; native sizes the bar itself
-          ...Platform.select({ web: { height: 68, paddingTop: 6, paddingBottom: 10 }, default: {} }),
+          ...Platform.select({ web: { height: 76, paddingTop: 8, paddingBottom: 14 }, default: {} }),
         },
       }}>
-      {screens.map(({ name, title, icon }) => (
+      {screens.map(({ name, title, icon, iconActive }) => (
         <Tabs.Screen
           key={name}
           name={name}
           options={{
             title,
-            tabBarIcon: ({ color, size }) => <Ionicons name={icon} color={color as string} size={size} />,
+            tabBarIcon: ({ color, size, focused }) => <Ionicons name={focused ? iconActive : icon} color={color as string} size={size} />,
           }}
         />
       ))}

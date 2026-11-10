@@ -13,7 +13,7 @@ import { pickImages } from '@/lib/photos';
 import { singleFlight } from '@/lib/singleFlight';
 import { supabase } from '@/lib/supabase';
 import type { Offer } from '@/lib/types';
-import { colors, radius, space, type } from '@/theme';
+import { card, colors, radius, space, type } from '@/theme';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const toDateString = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -154,12 +154,12 @@ export default function ManageOffers() {
       ) : null}
       <Button title={preview ? t.offers.changePhoto : t.offers.addPhoto} variant="secondary" onPress={choosePhoto} />
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <Button title={editing ? t.admin.update : t.admin.create} onPress={() => submit()} disabled={busy} />
+      <Button title={editing ? t.admin.update : t.admin.create} onPress={() => submit()} loading={busy} />
       {editing ? <Button title={t.common.cancel} variant="secondary" onPress={reset} /> : null}
 
       {items.length > 0 ? <Text style={[type.title, { marginTop: space.md }]}>{t.admin.existing}</Text> : null}
       {items.map((o) => (
-        <View key={o.id} style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
+        <View key={o.id} style={{ ...card, gap: space.sm }}>
           <Text style={type.caption}>{o.sponsor}</Text>
           <Text style={type.heading}>{o.title}</Text>
           <View style={{ flexDirection: 'row', gap: space.sm }}>

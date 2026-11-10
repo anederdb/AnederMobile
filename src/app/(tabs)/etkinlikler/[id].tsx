@@ -1,16 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 
 import { PhotoCarousel } from '@/components/PhotoCarousel';
 import { Screen } from '@/components/Screen';
-import { Button } from '@/components/ui';
+import { Button, Card, InfoRow, Skeleton } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { formatTrDateTime } from '@/lib/dates';
 import { shareEvent } from '@/lib/share';
 import { supabase } from '@/lib/supabase';
 import type { AppEvent, EventPhoto } from '@/lib/types';
-import { colors, type } from '@/theme';
+import { colors, space, type } from '@/theme';
 
 export default function EventDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,7 +36,9 @@ export default function EventDetail() {
   if (!event) {
     return (
       <Screen>
-        <Text style={type.caption}>{t.common.loading}</Text>
+        <Skeleton height={200} />
+        <Skeleton height={36} />
+        <Skeleton height={96} />
       </Screen>
     );
   }
@@ -44,14 +47,12 @@ export default function EventDetail() {
     <Screen>
       <PhotoCarousel urls={photos.length ? photos : event.cover_url ? [event.cover_url] : []} label={event.title} />
       <Text style={type.display}>{event.title}</Text>
-      <Text style={[type.heading, { color: colors.primary }]}>{formatTrDateTime(event.starts_at)}</Text>
-      {event.location ? (
-        <Text style={type.body}>
-          {t.events.location}: {event.location}
-        </Text>
-      ) : null}
+      <Card style={{ gap: space.md }}>
+        <InfoRow icon="calendar-outline" text={formatTrDateTime(event.starts_at)} />
+        {event.location ? <InfoRow icon="location-outline" text={event.location} /> : null}
+      </Card>
       {event.description ? <Text style={type.body}>{event.description}</Text> : null}
-      <Button title={t.events.share} variant="secondary" onPress={() => shareEvent(event)} />
+      <Button title={t.events.share} variant="secondary" icon={<Ionicons name="share-social-outline" size={20} color={colors.ink} />} onPress={() => shareEvent(event)} />
     </Screen>
   );
 }

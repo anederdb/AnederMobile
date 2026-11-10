@@ -8,7 +8,7 @@ import { confirm } from '@/lib/confirm';
 import { formatTrDateTime } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 import type { AppEvent } from '@/lib/types';
-import { colors, radius, space, type } from '@/theme';
+import { card, space, type } from '@/theme';
 
 type Row = { member_id: string; checked_in_at: string; profiles: { full_name: string | null } | null };
 
@@ -62,7 +62,7 @@ export default function Attendance() {
       </Text>
       {rows.length === 0 ? <Text style={type.body}>{t.qr.noAttendees}</Text> : null}
       {rows.map((r) => (
-        <View key={r.member_id} style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
+        <View key={r.member_id} style={{ ...card, gap: space.sm }}>
           <Text style={type.heading}>{r.profiles?.full_name}</Text>
           <Text style={type.caption}>{formatTrDateTime(r.checked_in_at)}</Text>
           <Button title={t.common.delete} variant="danger" onPress={() => remove(r)} />

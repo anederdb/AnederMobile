@@ -10,7 +10,7 @@ import { TitleLabel } from '@/components/TitleLabel';
 import { t } from '@/i18n/tr';
 import { supabase } from '@/lib/supabase';
 import type { Firm, Listing, Profile } from '@/lib/types';
-import { colors, radius, space, type } from '@/theme';
+import { card, colors, space, type } from '@/theme';
 
 export default function MemberDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -53,7 +53,7 @@ export default function MemberDetail() {
 
       {firms.length > 0 ? <Text style={[type.title, { marginTop: space.sm }]}>{t.members.firms}</Text> : null}
       {firms.map((f) => (
-        <View key={f.id} style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.xs }}>
+        <View key={f.id} style={{ ...card, gap: space.xs }}>
           <Text style={type.heading}>{f.name}</Text>
           {f.district ? <Text style={type.caption}>{f.district}</Text> : null}
           {f.sahibinden_url ? (

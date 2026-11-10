@@ -1,16 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { ListingCard } from '@/components/ListingCard';
 import { Screen } from '@/components/Screen';
-import { Button, Chip, Field } from '@/components/ui';
+import { Button, Chip, EmptyState, Field, Skeleton } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { ANKARA_DISTRICTS, ROOM_OPTIONS } from '@/lib/districts';
 import { applyListingFilters, type ListingFilters } from '@/lib/listingFilters';
 import { supabase } from '@/lib/supabase';
 import type { Listing } from '@/lib/types';
-import { space, type } from '@/theme';
+import { colors, space, type } from '@/theme';
 
 export default function Listings() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function Listings() {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Text style={type.display}>{t.listings.title}</Text>
       </View>
-      <Button title={t.listings.add} onPress={() => router.push('/talepler/form')} />
+      <Button title={t.listings.add} icon={<Ionicons name="add" size={22} color={colors.onPrimary} />} onPress={() => router.push('/talepler/form')} />
 
       <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center' }}>
         <Chip label={t.listings.all} selected={!filters.type} onPress={() => update({ type: undefined })} />
@@ -99,8 +100,13 @@ export default function Listings() {
         </View>
       ) : null}
 
-      {items === null ? <Text style={type.caption}>{t.common.loading}</Text> : null}
-      {items && items.length === 0 ? <Text style={type.body}>{t.listings.empty}</Text> : null}
+      {items === null ? (
+        <>
+          <Skeleton height={120} />
+          <Skeleton height={120} />
+        </>
+      ) : null}
+      {items && items.length === 0 ? <EmptyState icon="business-outline" title={t.listings.empty} /> : null}
       {items?.map((l) => (
         <ListingCard key={l.id} listing={l} />
       ))}

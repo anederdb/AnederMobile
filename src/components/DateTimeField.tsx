@@ -66,7 +66,7 @@ export function DateTimeField({ label, value, onChange, minimumDate }: Props) {
         borderRadius: radius.md,
         borderWidth: 1,
         borderColor: colors.border,
-        backgroundColor: colors.background,
+        backgroundColor: colors.surface,
       }}>
       <Text style={value ? type.body : [type.body, { color: colors.placeholder }]}>
         {value ? formatTrDateTime(value.toISOString()) : t.admin.pickDateTime}

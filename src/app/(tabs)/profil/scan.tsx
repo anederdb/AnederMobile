@@ -107,7 +107,7 @@ export default function Scan() {
       {!useCamera && eventId && !outcome ? (
         <>
           <Field label={t.qr.pasteLabel} value={pasted} onChangeText={setPasted} autoCapitalize="none" />
-          <Button title={t.qr.check} onPress={() => handle(pasted.trim())} disabled={busy} />
+          <Button title={t.qr.check} onPress={() => handle(pasted.trim())} loading={busy} />
         </>
       ) : null}
     </Screen>

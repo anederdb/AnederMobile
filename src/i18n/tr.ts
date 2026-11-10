@@ -1,4 +1,7 @@
 export const tr = {
+  home: {
+    welcome: 'Hoş geldin',
+  },
   tabs: {
     home: 'Anasayfa',
     events: 'Etkinlikler',
@@ -49,8 +52,11 @@ export const tr = {
     consentSuffix: '. ANEDER etkinlik ve duyuru e-postaları almayı kabul ediyorum.',
     consentAnd: ' ve ',
     consentRequired: 'Devam etmek için kullanım şartlarını ve aydınlatma metnini kabul etmelisiniz.',
+    showPassword: 'Şifreyi göster',
+    hidePassword: 'Şifreyi gizle',
     photo: 'Profil fotoğrafı',
     photoChoose: 'Fotoğraf Seç',
+    photoHint: 'Profil fotoğrafı zorunludur.',
     photoChange: 'Fotoğrafı Değiştir',
     photoRequired: 'Lütfen bir profil fotoğrafı ekleyin.',
   },

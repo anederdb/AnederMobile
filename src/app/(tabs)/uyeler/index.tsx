@@ -1,16 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { Screen } from '@/components/Screen';
 import { TitleLabel } from '@/components/TitleLabel';
-import { Button, Field } from '@/components/ui';
+import { Card, EmptyState, Field, ListGroup, ListRow, Skeleton } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { matchesMember } from '@/lib/memberSearch';
 import { supabase } from '@/lib/supabase';
 import type { Firm, Profile } from '@/lib/types';
-import { colors, radius, space, type } from '@/theme';
+import { colors, space, type } from '@/theme';
 
 type Row = { profile: Profile; firms: string[] };
 
@@ -43,31 +44,32 @@ export default function Members() {
   return (
     <Screen>
       <Text style={type.display}>{t.members.title}</Text>
-      <Button title={t.about.entry} variant="secondary" onPress={() => router.push('/uyeler/hakkimizda')} />
+      <ListGroup>
+        <ListRow icon="information-circle-outline" title={t.about.entry} onPress={() => router.push('/uyeler/hakkimizda')} />
+      </ListGroup>
       <Field label={t.members.search} value={query} onChangeText={setQuery} autoCapitalize="none" />
-      {rows === null ? <Text style={type.caption}>{t.common.loading}</Text> : null}
-      {rows && visible.length === 0 ? <Text style={type.body}>{t.members.empty}</Text> : null}
+      {rows === null ? (
+        <>
+          <Skeleton height={84} />
+          <Skeleton height={84} />
+          <Skeleton height={84} />
+        </>
+      ) : null}
+      {rows && visible.length === 0 ? <EmptyState icon="search-outline" title={t.members.empty} /> : null}
       {visible.map(({ profile, firms }) => (
-        <Pressable
+        <Card
           key={profile.id}
-          accessibilityRole="link"
           onPress={() => router.push({ pathname: '/uyeler/[id]', params: { id: profile.id } })}
-          style={({ pressed }) => ({
-            backgroundColor: colors.surface,
-            borderRadius: radius.lg,
-            padding: space.md,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: space.md,
-            opacity: pressed ? 0.85 : 1,
-          })}>
+          accessibilityLabel={profile.full_name ?? undefined}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
           <Avatar url={profile.avatar_url} name={profile.full_name} size={52} />
           <View style={{ flex: 1, gap: space.xs }}>
             <Text style={type.heading}>{profile.full_name}</Text>
             <TitleLabel title={profile.title} />
             {firms.length > 0 ? <Text style={type.caption}>{firms.join(' · ')}</Text> : null}
           </View>
-        </Pressable>
+          <Ionicons name="chevron-forward" size={18} color={colors.placeholder} />
+        </Card>
       ))}
     </Screen>
   );

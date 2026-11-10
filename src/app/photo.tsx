@@ -56,7 +56,7 @@ export default function PhotoGate() {
       {error ? <ErrorText>{error}</ErrorText> : null}
       <Button
         title={t.auth.photoChoose}
-        disabled={busy}
+        loading={busy}
         onPress={async () => {
           const image = await pickAvatar();
           if (image) await upload(image);

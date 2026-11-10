@@ -15,7 +15,7 @@ import { pickImages } from '@/lib/photos';
 import { singleFlight } from '@/lib/singleFlight';
 import { supabase } from '@/lib/supabase';
 import type { AppEvent, EventPhoto } from '@/lib/types';
-import { colors, radius, space, type } from '@/theme';
+import { card, colors, radius, space, type } from '@/theme';
 
 const MAX_PHOTOS = 10;
 
@@ -198,12 +198,12 @@ export default function ManageEvents() {
       {!editing ? <PublishToggles push={sendPush} email={sendEmail} onPush={setSendPush} onEmail={setSendEmail} /> : null}
       {error ? <ErrorText>{error}</ErrorText> : null}
       {note ? <Text accessibilityRole="alert" style={type.label}>{note}</Text> : null}
-      <Button title={editing ? t.admin.update : t.admin.create} onPress={() => submit()} disabled={busy} />
+      <Button title={editing ? t.admin.update : t.admin.create} onPress={() => submit()} loading={busy} />
       {editing ? <Button title={t.common.cancel} variant="secondary" onPress={reset} /> : null}
 
       {events.length > 0 ? <Text style={[type.title, { marginTop: space.md }]}>{t.admin.existing}</Text> : null}
       {events.map((e) => (
-        <View key={e.id} style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
+        <View key={e.id} style={{ ...card, gap: space.sm }}>
           <Text style={[type.caption, { color: colors.primary }]}>{formatTrDateTime(e.starts_at)}</Text>
           <Text style={type.heading}>{e.title}</Text>
           <View style={{ flexDirection: 'row', gap: space.sm }}>
