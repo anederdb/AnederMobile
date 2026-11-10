@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { Linking, Text, View } from 'react-native';
 
 import { t } from '@/i18n/tr';
@@ -15,6 +16,14 @@ export function OfferCard({ offer }: { offer: Offer }) {
         borderLeftWidth: 4,
         borderLeftColor: colors.primary,
       }}>
+      {offer.image_url ? (
+        <Image
+          source={{ uri: offer.image_url }}
+          contentFit="cover"
+          accessibilityLabel={offer.title}
+          style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: radius.md, backgroundColor: colors.border, marginBottom: space.xs }}
+        />
+      ) : null}
       <Text style={[type.label, { color: colors.primary }]}>{offer.sponsor}</Text>
       <Text style={type.heading}>{offer.title}</Text>
       {offer.description ? <Text style={type.body}>{offer.description}</Text> : null}

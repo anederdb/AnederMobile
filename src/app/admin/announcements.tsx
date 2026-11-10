@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ScrollView, type ScrollViewInstance, Text, View } from 'react-native';
 
 import { PublishToggles } from '@/components/PublishToggles';
 import { Screen } from '@/components/Screen';
@@ -14,6 +14,7 @@ import type { Announcement } from '@/lib/types';
 import { colors, radius, space, type } from '@/theme';
 
 export default function ManageAnnouncements() {
+  const scroll = useRef<ScrollViewInstance>(null);
   const [items, setItems] = useState<Announcement[]>([]);
   const [editing, setEditing] = useState<Announcement | null>(null);
   const [title, setTitle] = useState('');
@@ -45,6 +46,7 @@ export default function ManageAnnouncements() {
     setTitle(a.title);
     setBody(a.body);
     setError('');
+    scroll.current?.scrollTo({ y: 0, animated: true });
   }
 
   // singleFlight: a second tap while the first save is running does nothing.
@@ -85,21 +87,8 @@ export default function ManageAnnouncements() {
   }
 
   return (
-    <Screen>
-      {items.map((a) => (
-        <View key={a.id} style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
-          <Text style={type.caption}>{formatTrDateTime(a.created_at)}</Text>
-          <Text style={type.heading}>{a.title}</Text>
-          <View style={{ flexDirection: 'row', gap: space.sm }}>
-            <View style={{ flex: 1 }}>
-              <Button title={t.common.edit} variant="secondary" onPress={() => startEdit(a)} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button title={t.common.delete} variant="danger" onPress={() => remove(a)} />
-            </View>
-          </View>
-        </View>
-      ))}
+    <Screen scrollRef={scroll}>
+      <Text style={type.title}>{editing ? `${t.admin.formEditing}: ${editing.title}` : t.admin.formNew}</Text>
       <Field label={t.admin.announcementTitle} value={title} onChangeText={setTitle} autoCapitalize="sentences" />
       <Field
         label={t.admin.announcementBody}
@@ -114,6 +103,22 @@ export default function ManageAnnouncements() {
       {note ? <Text accessibilityRole="alert" style={type.label}>{note}</Text> : null}
       <Button title={editing ? t.admin.update : t.admin.create} onPress={() => submit()} disabled={busy} />
       {editing ? <Button title={t.common.cancel} variant="secondary" onPress={reset} /> : null}
+
+      {items.length > 0 ? <Text style={[type.title, { marginTop: space.md }]}>{t.admin.existing}</Text> : null}
+      {items.map((a) => (
+        <View key={a.id} style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
+          <Text style={type.caption}>{formatTrDateTime(a.created_at)}</Text>
+          <Text style={type.heading}>{a.title}</Text>
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <View style={{ flex: 1 }}>
+              <Button title={t.common.edit} variant="secondary" onPress={() => startEdit(a)} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button title={t.common.delete} variant="danger" onPress={() => remove(a)} />
+            </View>
+          </View>
+        </View>
+      ))}
     </Screen>
   );
 }

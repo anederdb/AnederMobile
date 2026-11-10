@@ -23,11 +23,13 @@ export function Button({
   onPress,
   disabled,
   variant = 'primary',
+  icon,
 }: {
   title: string;
   onPress: () => void;
   disabled?: boolean;
   variant?: 'primary' | 'secondary' | 'danger';
+  icon?: ReactNode;
 }) {
   return (
     <Pressable
@@ -41,6 +43,7 @@ export function Button({
         pressed && variant !== 'primary' && { opacity: 0.7 },
         disabled && { opacity: 0.45 },
       ]}>
+      {icon}
       <Text style={[styles.buttonText, textColor[variant]]}>{title}</Text>
     </Pressable>
   );
@@ -120,6 +123,8 @@ const styles = StyleSheet.create({
     minHeight: touch.minHeight,
     borderRadius: radius.md,
     paddingHorizontal: space.md,
+    flexDirection: 'row',
+    gap: space.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },

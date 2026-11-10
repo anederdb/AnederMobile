@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Linking, Text, View } from 'react-native';
 
 import { ListingCard } from '@/components/ListingCard';
+import { ContactActions } from '@/components/ContactActions';
 import { Screen } from '@/components/Screen';
 import { Button } from '@/components/ui';
 import { t } from '@/i18n/tr';
@@ -80,7 +81,7 @@ export default function ListingDetail() {
           <Text style={type.label}>{t.listings.contact}</Text>
           <Text style={type.heading}>{owner.full_name}</Text>
           {firm ? <Text style={type.caption}>{firm.name}</Text> : null}
-          {owner.phone ? <Button title={`${t.listings.call}: ${owner.phone}`} onPress={() => Linking.openURL(`tel:${owner.phone}`)} /> : null}
+          {owner.phone ? <ContactActions phone={owner.phone} /> : null}
           {firm?.sahibinden_url ? (
             <Text
               accessibilityRole="link"

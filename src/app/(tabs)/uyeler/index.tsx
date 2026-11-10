@@ -1,7 +1,8 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, Text } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
 import { Screen } from '@/components/Screen';
 import { TitleLabel } from '@/components/TitleLabel';
 import { Button, Field } from '@/components/ui';
@@ -55,12 +56,17 @@ export default function Members() {
             backgroundColor: colors.surface,
             borderRadius: radius.lg,
             padding: space.md,
-            gap: space.xs,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: space.md,
             opacity: pressed ? 0.85 : 1,
           })}>
-          <Text style={type.heading}>{profile.full_name}</Text>
-          <TitleLabel title={profile.title} />
-          {firms.length > 0 ? <Text style={type.caption}>{firms.join(' · ')}</Text> : null}
+          <Avatar url={profile.avatar_url} name={profile.full_name} size={52} />
+          <View style={{ flex: 1, gap: space.xs }}>
+            <Text style={type.heading}>{profile.full_name}</Text>
+            <TitleLabel title={profile.title} />
+            {firms.length > 0 ? <Text style={type.caption}>{firms.join(' · ')}</Text> : null}
+          </View>
         </Pressable>
       ))}
     </Screen>

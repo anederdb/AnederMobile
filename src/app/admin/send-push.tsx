@@ -19,7 +19,7 @@ export default function SendPush() {
     setError('');
     setResult('');
     if (!title.trim() || !body.trim()) return setError(t.auth.required);
-    if (!(await confirm(t.admin.sendPush, t.admin.pushConfirm))) return;
+    if (!(await confirm(t.admin.sendPush, t.admin.pushConfirm, t.admin.pushConfirmAction))) return;
     setBusy(true);
     const { data, error: err } = await supabase.functions.invoke('send-push', { body: { title, body } });
     setBusy(false);

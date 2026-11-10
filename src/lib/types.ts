@@ -69,6 +69,7 @@ export type Offer = {
   title: string;
   description: string | null;
   link: string | null;
+  image_url: string | null;
   valid_until: string | null;
   created_at: string;
 };

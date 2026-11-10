@@ -15,7 +15,7 @@ import type { Listing } from '@/lib/types';
 import { colors, radius, space, type } from '@/theme';
 
 export default function Profile() {
-  const { profile } = useSession();
+  const { profile, session } = useSession();
   const router = useRouter();
   const [mine, setMine] = useState<Listing[]>([]);
   const [message, setMessage] = useState('');
@@ -63,6 +63,7 @@ export default function Profile() {
           <Text style={type.title}>{profile.full_name}</Text>
           <TitleLabel title={profile.title} />
           {profile.phone ? <Text style={type.body}>{profile.phone}</Text> : null}
+          {session?.user.email ? <Text style={type.body}>{session.user.email}</Text> : null}
         </View>
       </View>
       <View

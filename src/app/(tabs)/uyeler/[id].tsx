@@ -2,10 +2,11 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Linking, Text, View } from 'react-native';
 
+import { Avatar } from '@/components/Avatar';
+import { ContactActions } from '@/components/ContactActions';
 import { ListingCard } from '@/components/ListingCard';
 import { Screen } from '@/components/Screen';
 import { TitleLabel } from '@/components/TitleLabel';
-import { Button } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { supabase } from '@/lib/supabase';
 import type { Firm, Listing, Profile } from '@/lib/types';
@@ -41,9 +42,14 @@ export default function MemberDetail() {
 
   return (
     <Screen>
-      <Text style={type.display}>{member.full_name}</Text>
-      <TitleLabel title={member.title} />
-      {member.phone ? <Button title={`${t.listings.call}: ${member.phone}`} onPress={() => Linking.openURL(`tel:${member.phone}`)} /> : null}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+        <Avatar url={member.avatar_url} name={member.full_name} size={88} />
+        <View style={{ flex: 1, gap: space.xs }}>
+          <Text style={type.title}>{member.full_name}</Text>
+          <TitleLabel title={member.title} />
+        </View>
+      </View>
+      {member.phone ? <ContactActions phone={member.phone} /> : null}
 
       {firms.length > 0 ? <Text style={[type.title, { marginTop: space.sm }]}>{t.members.firms}</Text> : null}
       {firms.map((f) => (

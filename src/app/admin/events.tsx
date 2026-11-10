@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, type ScrollViewInstance, Text, View } from 'react-native';
 
 import { DateTimeField } from '@/components/DateTimeField';
 import { PublishToggles } from '@/components/PublishToggles';
@@ -20,6 +20,7 @@ import { colors, radius, space, type } from '@/theme';
 const MAX_PHOTOS = 10;
 
 export default function ManageEvents() {
+  const scroll = useRef<ScrollViewInstance>(null);
   const [events, setEvents] = useState<AppEvent[]>([]);
   const [editing, setEditing] = useState<AppEvent | null>(null);
   const [title, setTitle] = useState('');
@@ -64,6 +65,7 @@ export default function ManageEvents() {
     setDate(new Date(e.starts_at));
     setFresh([]);
     setError('');
+    scroll.current?.scrollTo({ y: 0, animated: true });
     const { data } = await supabase.from('event_photos').select('*').eq('event_id', e.id).order('position');
     setExisting((data as EventPhoto[]) ?? []);
   }
@@ -162,21 +164,8 @@ export default function ManageEvents() {
   ];
 
   return (
-    <Screen>
-      {events.map((e) => (
-        <View key={e.id} style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
-          <Text style={[type.caption, { color: colors.primary }]}>{formatTrDateTime(e.starts_at)}</Text>
-          <Text style={type.heading}>{e.title}</Text>
-          <View style={{ flexDirection: 'row', gap: space.sm }}>
-            <View style={{ flex: 1 }}>
-              <Button title={t.common.edit} variant="secondary" onPress={() => startEdit(e)} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button title={t.common.delete} variant="danger" onPress={() => remove(e)} />
-            </View>
-          </View>
-        </View>
-      ))}
+    <Screen scrollRef={scroll}>
+      <Text style={type.title}>{editing ? `${t.admin.formEditing}: ${editing.title}` : t.admin.formNew}</Text>
       <Field label={t.admin.eventTitle} value={title} onChangeText={setTitle} autoCapitalize="sentences" />
       <DateTimeField label={t.admin.eventDate} value={date} onChange={setDate} />
       <Field label={t.admin.eventLocation} value={location} onChangeText={setLocation} autoCapitalize="sentences" />
@@ -211,6 +200,22 @@ export default function ManageEvents() {
       {note ? <Text accessibilityRole="alert" style={type.label}>{note}</Text> : null}
       <Button title={editing ? t.admin.update : t.admin.create} onPress={() => submit()} disabled={busy} />
       {editing ? <Button title={t.common.cancel} variant="secondary" onPress={reset} /> : null}
+
+      {events.length > 0 ? <Text style={[type.title, { marginTop: space.md }]}>{t.admin.existing}</Text> : null}
+      {events.map((e) => (
+        <View key={e.id} style={{ backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.md, gap: space.sm }}>
+          <Text style={[type.caption, { color: colors.primary }]}>{formatTrDateTime(e.starts_at)}</Text>
+          <Text style={type.heading}>{e.title}</Text>
+          <View style={{ flexDirection: 'row', gap: space.sm }}>
+            <View style={{ flex: 1 }}>
+              <Button title={t.common.edit} variant="secondary" onPress={() => startEdit(e)} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button title={t.common.delete} variant="danger" onPress={() => remove(e)} />
+            </View>
+          </View>
+        </View>
+      ))}
     </Screen>
   );
 }
