@@ -1,13 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 
 import { PhotoCarousel } from '@/components/PhotoCarousel';
+import { RsvpButtons } from '@/components/RsvpButtons';
 import { Screen } from '@/components/Screen';
 import { Button, Card, InfoRow, Skeleton } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { formatTrDateTime } from '@/lib/dates';
+import { useSession } from '@/lib/session';
 import { shareEvent } from '@/lib/share';
 import { supabase } from '@/lib/supabase';
 import type { AppEvent, EventPhoto } from '@/lib/types';
@@ -15,6 +17,8 @@ import { colors, space, type } from '@/theme';
 
 export default function EventDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const { profile } = useSession();
   const [event, setEvent] = useState<AppEvent | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
 
@@ -52,6 +56,15 @@ export default function EventDetail() {
         {event.location ? <InfoRow icon="location-outline" text={event.location} /> : null}
       </Card>
       {event.description ? <Text style={type.body}>{event.description}</Text> : null}
+      <RsvpButtons eventId={event.id} startsAt={event.starts_at} />
+      {profile?.role === 'admin' ? (
+        <Button
+          title={t.rsvp.list}
+          variant="secondary"
+          icon={<Ionicons name="people-circle-outline" size={22} color={colors.ink} />}
+          onPress={() => router.push({ pathname: '/admin/rsvps', params: { eventId: event.id } })}
+        />
+      ) : null}
       <Button title={t.events.share} variant="secondary" icon={<Ionicons name="share-social-outline" size={20} color={colors.ink} />} onPress={() => shareEvent(event)} />
     </Screen>
   );

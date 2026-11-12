@@ -38,6 +38,13 @@ export type EventPhoto = {
   position: number;
 };
 
+export type EventRsvp = {
+  event_id: string;
+  member_id: string;
+  status: 'going' | 'not_going';
+  updated_at: string;
+};
+
 export type Announcement = {
   id: string;
   title: string;

@@ -116,6 +116,7 @@ export default function Profile() {
           <ListGroup>
             <ListRow icon="calendar-outline" title={t.admin.events} onPress={() => router.push('/admin/events')} />
             <ListRow icon="megaphone-outline" title={t.admin.announcements} onPress={() => router.push('/admin/announcements')} />
+            <ListRow icon="people-circle-outline" title={t.rsvp.list} onPress={() => router.push('/admin/rsvps')} />
             <ListRow icon="checkmark-done-outline" title={t.qr.attendance} onPress={() => router.push('/admin/attendance')} />
             <ListRow icon="pricetag-outline" title={t.admin.offers} onPress={() => router.push('/admin/offers')} />
             <ListRow icon="notifications-outline" title={t.admin.sendPush} onPress={() => router.push('/admin/send-push')} />

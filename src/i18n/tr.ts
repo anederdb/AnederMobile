@@ -11,6 +11,7 @@ export const tr = {
   },
   common: {
     save: 'Kaydet',
+    back: 'Geri',
     cancel: 'Vazgeç',
     delete: 'Sil',
     edit: 'Düzenle',
@@ -110,6 +111,19 @@ export const tr = {
     location: 'Yer',
     date: 'Tarih',
     share: 'Paylaş',
+  },
+  rsvp: {
+    title: 'Katılım durumunuz',
+    going: 'Katılacağım',
+    notGoing: 'Katılamayacağım',
+    hint: 'Yöneticiler cevabınızı görebilir. Seçtiğiniz cevaba tekrar dokunarak geri alabilirsiniz.',
+    closed: 'Etkinlik başladığı için katılım bildirimi kapandı.',
+    yourAnswer: 'Cevabınız',
+    list: 'Katılım Listesi',
+    goingGroup: 'Katılacak',
+    notGoingGroup: 'Katılamayacak',
+    noReplyGroup: 'Cevap vermedi',
+    emptyGroup: 'Bu grupta kimse yok.',
   },
   announcements: {
     title: 'Duyurular',
