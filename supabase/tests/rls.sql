@@ -547,3 +547,86 @@ begin
   assert req = true, 'new signup requires a photo';
   raise exception 'PHOTO TESTS PASSED';
 end $$;
+
+-- Listing sides: match_score, matching_listings, my_recommendations, similar_listings (same side only).
+do $$
+declare
+  a_id uuid := gen_random_uuid(); b_id uuid := gen_random_uuid(); z_id uuid := gen_random_uuid(); p_id uuid := gen_random_uuid();
+  al_main uuid; ver_best uuid; ver_ok uuid; ver_type uuid; ver_dist uuid; ver_nodist uuid; ver_exp uuid; ver_open uuid; al_same uuid;
+  la public.listings; lb public.listings;
+  n int; s int;
+begin
+  insert into auth.users (id, email) values (a_id, 'a18@t.test'), (b_id, 'b18@t.test'), (z_id, 'z18@t.test'), (p_id, 'p18@t.test');
+  update public.profiles set status = 'approved' where id in (a_id, b_id, z_id);
+
+  insert into public.listings (owner_id, title, type, side, district, neighborhood, min_price, max_price, rooms, area_m2)
+    values (a_id, 'al ana', 'satilik', 'al', 'Çankaya', 'Kızılay', 4000000, 6000000, '{3+1}', 130) returning id into al_main;
+  insert into public.listings (owner_id, title, type, side, district, neighborhood, min_price, max_price, rooms, area_m2)
+    values (b_id, 'ver en iyi', 'satilik', 'ver', 'Çankaya', 'Kizilay', 5000000, 5000000, '{3+1,2+1}', 135) returning id into ver_best;
+  insert into public.listings (owner_id, title, type, side, district, neighborhood, min_price, max_price, rooms)
+    values (b_id, 'ver idare eder', 'satilik', 'ver', 'Çankaya', 'Bahçelievler', 5500000, 5500000, '{1+1}') returning id into ver_ok;
+  insert into public.listings (owner_id, title, type, side, district, min_price, max_price)
+    values (b_id, 'ver kiralik', 'kiralik', 'ver', 'Çankaya', 5000000, 5000000) returning id into ver_type;
+  insert into public.listings (owner_id, title, type, side, district, min_price, max_price)
+    values (b_id, 'ver baska ilce', 'satilik', 'ver', 'Yenimahalle', 5000000, 5000000) returning id into ver_dist;
+  insert into public.listings (owner_id, title, type, side, min_price, max_price)
+    values (b_id, 'ver ilcesiz', 'satilik', 'ver', 5000000, 5000000) returning id into ver_nodist;
+  insert into public.listings (owner_id, title, type, side, district, min_price, max_price)
+    values (b_id, 'ver pahali', 'satilik', 'ver', 'Çankaya', 9000000, 9000000) returning id into ver_exp;
+  insert into public.listings (owner_id, title, type, side, district)
+    values (b_id, 'ver fiyatsiz', 'satilik', 'ver', 'Çankaya') returning id into ver_open;
+  insert into public.listings (owner_id, title, type, side, district, min_price, max_price)
+    values (b_id, 'al ayni taraf', 'satilik', 'al', 'Çankaya', 4500000, 5500000) returning id into al_same;
+
+  select * into la from public.listings where id = al_main;
+  select * into lb from public.listings where id = ver_best;
+  s := public.match_score(la, lb); assert s = 6, 'best match scores 3 (neighborhood) + 2 (room) + 1 (area) = 6, got ' || coalesce(s::text, 'null');
+  select * into lb from public.listings where id = ver_ok;
+  s := public.match_score(la, lb); assert s = 0, 'type+district+price match without extras scores 0';
+  select * into lb from public.listings where id = ver_type;
+  assert public.match_score(la, lb) is null, 'different type is not a match';
+  select * into lb from public.listings where id = ver_dist;
+  assert public.match_score(la, lb) is null, 'different district is not a match';
+  select * into lb from public.listings where id = ver_nodist;
+  assert public.match_score(la, lb) is null, 'a post without district never matches';
+  assert public.match_score(lb, la) is null, 'a post without district never matches (reversed)';
+  select * into lb from public.listings where id = ver_exp;
+  assert public.match_score(la, lb) is null, 'non-overlapping prices are not a match';
+  select * into lb from public.listings where id = ver_open;
+  assert public.match_score(la, lb) is not null, 'a post without a price fits any price';
+  select * into lb from public.listings where id = al_same;
+  assert public.match_score(la, lb) is null, 'same side is not a match';
+
+  -- member A (has an al post)
+  perform set_config('request.jwt.claims', json_build_object('sub', a_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.matching_listings(al_main); assert n = 3, 'three ver posts match the al post, got ' || n;
+  assert (select id from public.matching_listings(al_main) limit 1) = ver_best, 'best match comes first';
+  select count(*) into n from public.matching_listings(al_main) where id = al_main; assert n = 0, 'a post never matches itself';
+  select count(*) into n from public.my_recommendations(); assert n = 3, 'A is recommended the same three, got ' || n;
+  select count(*) into n from public.my_recommendations() where owner_id = a_id; assert n = 0, 'own posts are never recommended';
+  select count(*) into n from public.similar_listings(al_main) where side = 'ver'; assert n = 0, 'similar_listings ignores the other side';
+  select count(*) into n from public.similar_listings(al_main) where id = al_same; assert n = 1, 'similar_listings still finds same-side posts';
+  reset role;
+
+  -- member B (owns the ver posts and one al post)
+  perform set_config('request.jwt.claims', json_build_object('sub', b_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.my_recommendations(); assert n = 1, 'B is recommended only A''s al post, got ' || n;
+  assert (select id from public.my_recommendations() limit 1) = al_main, 'B''s recommendation is the al post';
+  reset role;
+
+  -- member without posts
+  perform set_config('request.jwt.claims', json_build_object('sub', z_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.my_recommendations(); assert n = 0, 'no posts means no recommendations';
+  reset role;
+
+  -- pending member sees nothing (listings are members-only)
+  perform set_config('request.jwt.claims', json_build_object('sub', p_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.matching_listings(al_main); assert n = 0, 'pending member gets no matches';
+  reset role;
+
+  raise exception 'LISTING SIDES TESTS PASSED';
+end $$;
