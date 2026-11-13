@@ -8,7 +8,8 @@ const cors = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-const FOOTER = '\n\n—\nANEDER üye bilgilendirmesi · info@aneder.org';
+const FOOTER =
+  '\n\n—\nANEDER üye bilgilendirmesi · info@aneder.org\nBu e-postaları almak istemiyorsanız uygulamada Profil → E-posta bildirimleri bölümünden kapatabilirsiniz.';
 
 // Admin-only: emails { subject, text } to every approved member who agreed to ANEDER emails.
 // One message per member (addresses are never shown to each other), sent through Resend.

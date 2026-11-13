@@ -25,7 +25,10 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const sale = listing.type === 'satilik';
   return (
     <Card onPress={() => router.push({ pathname: '/talepler/[id]', params: { id: listing.id } })} style={{ gap: space.sm }}>
-      <Badge label={sale ? t.listings.sale : t.listings.rent} tone={sale ? 'success' : 'info'} />
+      <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
+        <Badge label={listing.side === 'ver' ? t.listings.badgeVer : t.listings.badgeAl} tone={listing.side === 'ver' ? 'brand' : 'neutral'} />
+        <Badge label={sale ? t.listings.sale : t.listings.rent} tone={sale ? 'success' : 'info'} />
+      </View>
       <Text style={[type.title, { color: colors.primary }]}>{formatPriceRange(listing.min_price, listing.max_price) ?? '—'}</Text>
       <Text style={type.heading}>{listing.title}</Text>
       <View style={{ gap: 4 }}>

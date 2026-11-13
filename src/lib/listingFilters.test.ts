@@ -20,6 +20,11 @@ describe('normalizeFilters', () => {
   it('drops empty and blank values', () => {
     expect(normalizeFilters({ district: '', neighborhood: '  ', rooms: [] })).toEqual({});
   });
+
+  it('keeps the side (al / ver)', () => {
+    expect(normalizeFilters({ side: 'ver' })).toEqual({ side: 'ver' });
+    expect(normalizeFilters({ side: 'al', type: 'kiralik' })).toEqual({ type: 'kiralik', side: 'al' });
+  });
 });
 
 // A query-builder stub that records the calls it receives.
@@ -60,6 +65,18 @@ describe('applyListingFilters', () => {
       ['or', 'max_price.is.null,max_price.gte.8000000'],
       ['or', 'min_price.is.null,min_price.lte.12000000'],
     ]);
+  });
+
+  it('filters by side', () => {
+    const { q, calls } = recorder();
+    applyListingFilters(q as never, { side: 'al' });
+    expect(calls).toEqual([['eq', 'side', 'al']]);
+  });
+
+  it('adds no side constraint when the side is not set', () => {
+    const { q, calls } = recorder();
+    applyListingFilters(q as never, { type: 'kiralik' });
+    expect(calls.some((c) => c[1] === 'side')).toBe(false);
   });
 
   it('adds only the bound that was given', () => {

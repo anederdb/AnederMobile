@@ -24,6 +24,7 @@ export default function ListingDetail() {
   const [owner, setOwner] = useState<Profile | null>(null);
   const [firm, setFirm] = useState<Firm | null>(null);
   const [similar, setSimilar] = useState<Listing[]>([]);
+  const [matches, setMatches] = useState<Listing[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -31,15 +32,18 @@ export default function ListingDetail() {
       const l = data as Listing | null;
       setListing(l);
       if (!l) return;
-      const [ownerRes, firmRes, similarRes] = await Promise.all([
+      const [ownerRes, firmRes, similarRes, matchRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', l.owner_id).maybeSingle(),
         l.firm_id ? supabase.from('firms').select('*').eq('id', l.firm_id).maybeSingle() : Promise.resolve({ data: null }),
         supabase.rpc('similar_listings', { p_listing_id: l.id }),
+        supabase.rpc('matching_listings', { p_listing_id: l.id }),
       ]);
       setOwner(ownerRes.data as Profile | null);
       setFirm(firmRes.data as Firm | null);
       const sim = (similarRes.data as Listing[] | null) ?? [];
       setSimilar(sim);
+      // If the function is not available yet (migration not applied) this is simply empty, never a crash.
+      setMatches((matchRes.data as Listing[] | null) ?? []);
     })();
   }, [id]);
 
@@ -65,7 +69,10 @@ export default function ListingDetail() {
 
   return (
     <Screen>
-      <Badge label={listing.type === 'satilik' ? t.listings.sale : t.listings.rent} tone={listing.type === 'satilik' ? 'success' : 'info'} />
+      <View style={{ flexDirection: 'row', gap: space.sm, flexWrap: 'wrap' }}>
+        <Badge label={listing.side === 'ver' ? t.listings.badgeVer : t.listings.badgeAl} tone={listing.side === 'ver' ? 'brand' : 'neutral'} />
+        <Badge label={listing.type === 'satilik' ? t.listings.sale : t.listings.rent} tone={listing.type === 'satilik' ? 'success' : 'info'} />
+      </View>
       <Text style={[type.display, { color: colors.primary }]}>{formatPriceRange(listing.min_price, listing.max_price) ?? '—'}</Text>
       <Text style={type.title}>{listing.title}</Text>
       {place || specs ? (
@@ -116,6 +123,12 @@ export default function ListingDetail() {
           </View>
         </View>
       ) : null}
+
+      <Text style={[type.title, { marginTop: space.sm }]}>{t.listings.matches}</Text>
+      {matches.length === 0 ? <Text style={type.caption}>{t.listings.noMatches}</Text> : null}
+      {matches.map((m) => (
+        <ListingCard key={m.id} listing={m} />
+      ))}
 
       {similar.length > 0 ? (
         <>

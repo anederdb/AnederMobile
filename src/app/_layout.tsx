@@ -24,7 +24,10 @@ function Routes() {
   const group = authArea ? '(auth)' : needsPhoto ? 'photo' : approved ? '(tabs)' : 'pending';
   const target = recovering ? '/reset' : !signedIn ? '/login' : needsPhoto ? '/photo' : approved ? '/' : '/pending';
   const inAllowedArea =
-    (recovering ? segments[0] === '(auth)' && segments[1] === 'reset' : segments[0] === group) || (isAdmin && segments[0] === 'admin');
+    (recovering ? segments[0] === '(auth)' && segments[1] === 'reset' : segments[0] === group) ||
+    (isAdmin && segments[0] === 'admin') ||
+    (approved && (segments[0] === 'haberler' || segments[0] === 'kurumsal')) ||
+    segments[0] === 'yasal'; // legal pages are readable signed in or out
   useEffect(() => {
     if (!loading && !inAllowedArea) router.replace(target);
   }, [loading, inAllowedArea, target, router]);
@@ -57,7 +60,10 @@ function Routes() {
       </Stack.Protected>
       <Stack.Protected guard={approved}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="haberler" />
+        <Stack.Screen name="kurumsal" />
       </Stack.Protected>
+      <Stack.Screen name="yasal" />
       <Stack.Protected guard={isAdmin}>
         <Stack.Screen name="admin" />
       </Stack.Protected>

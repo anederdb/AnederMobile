@@ -45,6 +45,25 @@ export type EventRsvp = {
   updated_at: string;
 };
 
+export type SitePage = { key: string; body: string; updated_at: string };
+
+export type Training = {
+  id: string;
+  title: string;
+  video_url: string | null;
+  note: string | null;
+  position: number;
+  created_at: string;
+};
+
+export type NewsItem = {
+  id: string;
+  title: string;
+  body: string;
+  image_url: string | null;
+  created_at: string;
+};
+
 export type Announcement = {
   id: string;
   title: string;
@@ -59,6 +78,7 @@ export type Listing = {
   firm_id: string | null;
   title: string;
   type: 'satilik' | 'kiralik';
+  side: 'al' | 'ver';
   district: string | null;
   neighborhood: string | null;
   min_price: number | null;

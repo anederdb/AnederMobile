@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { Avatar } from '@/components/Avatar';
 import { ListingCard } from '@/components/ListingCard';
 import { Screen } from '@/components/Screen';
 import { TitleLabel } from '@/components/TitleLabel';
-import { Badge, Button, Card, EmptyState, ErrorText, ListGroup, ListRow, SectionHeader } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, ErrorText, ListGroup, ListRow, SectionHeader, SwitchRow } from '@/components/ui';
+import { LEGAL_PAGES } from '@/i18n/legalTexts';
 import { t } from '@/i18n/tr';
 import { confirm } from '@/lib/confirm';
 import { useSession } from '@/lib/session';
@@ -25,10 +26,28 @@ function ContactLine({ icon, text }: { icon: React.ComponentProps<typeof Ionicon
 }
 
 export default function Profile() {
-  const { profile, session } = useSession();
+  const { profile, session, refreshProfile } = useSession();
   const router = useRouter();
   const [mine, setMine] = useState<Listing[]>([]);
   const [message, setMessage] = useState('');
+  const [emailConsent, setEmailConsent] = useState(!!profile?.email_consent);
+
+  useEffect(() => {
+    setEmailConsent(!!profile?.email_consent);
+  }, [profile?.email_consent]);
+
+  // Members can turn ANEDER e-mails on or off themselves (açık rıza); revert if saving fails.
+  async function setEmailPreference(next: boolean) {
+    if (!profile) return;
+    setMessage('');
+    setEmailConsent(next);
+    const { error } = await supabase.from('profiles').update({ email_consent: next }).eq('id', profile.id);
+    if (error) {
+      setEmailConsent(!next);
+      return setMessage(t.common.error);
+    }
+    await refreshProfile();
+  }
 
   const loadMine = useCallback(async () => {
     if (!profile) return;
@@ -93,6 +112,21 @@ export default function Profile() {
         <ListRow icon="business-outline" title={t.profile.firms} onPress={() => router.push('/profil/firms')} />
       </ListGroup>
 
+      <Card>
+        <SwitchRow
+          label={t.legal.emailSwitch}
+          description={t.legal.emailSwitchHint}
+          value={emailConsent}
+          onValueChange={setEmailPreference}
+        />
+      </Card>
+
+      <ListGroup>
+        <ListRow icon="document-text-outline" title={LEGAL_PAGES['aydinlatma'].title} onPress={() => router.push('/yasal/aydinlatma')} />
+        <ListRow icon="shield-checkmark-outline" title={LEGAL_PAGES['acik-riza'].title} onPress={() => router.push('/yasal/acik-riza')} />
+        <ListRow icon="reader-outline" title={LEGAL_PAGES['kullanim-sartlari'].title} onPress={() => router.push('/yasal/kullanim-sartlari')} />
+      </ListGroup>
+
       <SectionHeader title={t.profile.myListings} />
       {mine.length === 0 ? <EmptyState icon="document-text-outline" title={t.profile.noListings} /> : null}
       {mine.map((l) => (
@@ -118,6 +152,9 @@ export default function Profile() {
             <ListRow icon="megaphone-outline" title={t.admin.announcements} onPress={() => router.push('/admin/announcements')} />
             <ListRow icon="people-circle-outline" title={t.rsvp.list} onPress={() => router.push('/admin/rsvps')} />
             <ListRow icon="checkmark-done-outline" title={t.qr.attendance} onPress={() => router.push('/admin/attendance')} />
+            <ListRow icon="newspaper-outline" title={t.news.manage} onPress={() => router.push('/admin/news')} />
+            <ListRow icon="document-text-outline" title={t.corporate.managePages} onPress={() => router.push('/admin/pages')} />
+            <ListRow icon="play-circle-outline" title={t.corporate.manageTrainings} onPress={() => router.push('/admin/trainings')} />
             <ListRow icon="pricetag-outline" title={t.admin.offers} onPress={() => router.push('/admin/offers')} />
             <ListRow icon="notifications-outline" title={t.admin.sendPush} onPress={() => router.push('/admin/send-push')} />
             <ListRow icon="people-outline" title={t.admin.members} onPress={() => router.push('/admin/members')} />

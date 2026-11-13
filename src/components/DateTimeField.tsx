@@ -6,7 +6,15 @@ import { t } from '@/i18n/tr';
 import { formatTrDateTime } from '@/lib/dates';
 import { colors, radius, space, touch, type } from '@/theme';
 
-type Props = { label: string; value: Date | null; onChange: (d: Date) => void; minimumDate?: Date };
+type Props = {
+  label: string;
+  value: Date | null;
+  onChange: (d: Date) => void;
+  minimumDate?: Date;
+  maximumDate?: Date;
+  /** 'date' hides the time step (e.g. date of birth). Default: date and time. */
+  mode?: 'datetime' | 'date';
+};
 
 /** A sensible starting point for the pickers: the next full hour. */
 function nextHour(): Date {
@@ -20,25 +28,32 @@ const toLocalInput = (d: Date) => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 
+const toLocalDate = (d: Date) => toLocalInput(d).slice(0, 10);
+
 /** Date + time picker: calendar and clock dialogs on Android, inline calendar and wheel on iOS, native input on web. */
-export function DateTimeField({ label, value, onChange, minimumDate }: Props) {
+export function DateTimeField({ label, value, onChange, minimumDate, maximumDate, mode = 'datetime' }: Props) {
+  const dateOnly = mode === 'date';
   const [open, setOpen] = useState(false);
   const [androidStep, setAndroidStep] = useState<'date' | 'time' | null>(null);
-  const [draft, setDraft] = useState<Date>(value ?? nextHour());
+  const [draft, setDraft] = useState<Date>(value ?? (dateOnly ? new Date(1990, 0, 1) : nextHour()));
   const current = value ?? draft;
 
   if (Platform.OS === 'web') {
+    const fmt = dateOnly ? toLocalDate : toLocalInput;
     return (
       <View style={{ gap: space.xs }}>
         <Text style={type.label}>{label}</Text>
         {createElement('input', {
-          type: 'datetime-local',
+          type: dateOnly ? 'date' : 'datetime-local',
           'aria-label': label,
-          value: value ? toLocalInput(value) : '',
-          min: minimumDate ? toLocalInput(minimumDate) : undefined,
+          value: value ? fmt(value) : '',
+          min: minimumDate ? fmt(minimumDate) : undefined,
+          max: maximumDate ? fmt(maximumDate) : undefined,
           onChange: (e: { target: { value: string } }) => {
-            const d = new Date(e.target.value);
-            if (!Number.isNaN(d.getTime())) onChange(d);
+            // 'YYYY-MM-DD' alone would be read as UTC; build the local date instead.
+            const [y, m, day] = e.target.value.split('-').map(Number);
+            const d = dateOnly ? new Date(y, (m ?? 1) - 1, day ?? 1) : new Date(e.target.value);
+            if (!Number.isNaN(d.getTime()) && e.target.value) onChange(d);
           },
           style: { minHeight: touch.minHeight, padding: 12, fontSize: 16, borderRadius: radius.md, border: `1px solid ${colors.border}` },
         })}
@@ -69,7 +84,7 @@ export function DateTimeField({ label, value, onChange, minimumDate }: Props) {
         backgroundColor: colors.surface,
       }}>
       <Text style={value ? type.body : [type.body, { color: colors.placeholder }]}>
-        {value ? formatTrDateTime(value.toISOString()) : t.admin.pickDateTime}
+        {value ? (dateOnly ? formatTrDateTime(value.toISOString()).slice(0, 10) : formatTrDateTime(value.toISOString())) : dateOnly ? t.auth.pickDate : t.admin.pickDateTime}
       </Text>
     </Pressable>
   );
@@ -86,17 +101,20 @@ export function DateTimeField({ label, value, onChange, minimumDate }: Props) {
             locale="tr_TR"
             value={current}
             minimumDate={minimumDate}
+            maximumDate={maximumDate}
             accentColor={colors.primary}
-            onValueChange={(_e, d) => onChange(merge(d, current))}
+            onValueChange={(_e, d) => onChange(dateOnly ? d : merge(d, current))}
           />
-          <DateTimePicker
-            mode="time"
-            display="spinner"
-            locale="tr_TR"
-            value={current}
-            accentColor={colors.primary}
-            onValueChange={(_e, d) => onChange(merge(current, d))}
-          />
+          {dateOnly ? null : (
+            <DateTimePicker
+              mode="time"
+              display="spinner"
+              locale="tr_TR"
+              value={current}
+              accentColor={colors.primary}
+              onValueChange={(_e, d) => onChange(merge(current, d))}
+            />
+          )}
         </View>
       ) : null}
       {Platform.OS === 'android' && androidStep === 'date' ? (
@@ -105,9 +123,15 @@ export function DateTimeField({ label, value, onChange, minimumDate }: Props) {
           presentation="dialog"
           value={draft}
           minimumDate={minimumDate}
+          maximumDate={maximumDate}
           onValueChange={(_e, d) => {
             setDraft(d);
-            setAndroidStep('time');
+            if (dateOnly) {
+              setAndroidStep(null);
+              onChange(d);
+            } else {
+              setAndroidStep('time');
+            }
           }}
           onDismiss={() => setAndroidStep(null)}
         />

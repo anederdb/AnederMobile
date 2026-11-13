@@ -1,4 +1,5 @@
 export type ListingFilters = {
+  side?: 'al' | 'ver';
   type?: 'satilik' | 'kiralik';
   district?: string;
   neighborhood?: string;
@@ -23,6 +24,7 @@ export function normalizeTr(input: string): string {
 
 export function normalizeFilters(f: ListingFilters): ListingFilters {
   const out: ListingFilters = {};
+  if (f.side) out.side = f.side;
   if (f.type) out.type = f.type;
   if (f.district?.trim()) out.district = f.district.trim();
   if (f.neighborhood?.trim()) out.neighborhood = f.neighborhood.trim();
@@ -45,6 +47,7 @@ type Chainable = {
 export function applyListingFilters<Q>(query: Q, filters: ListingFilters): Q {
   const f = normalizeFilters(filters);
   let q = query as unknown as Chainable;
+  if (f.side) q = q.eq('side', f.side);
   if (f.type) q = q.eq('type', f.type);
   if (f.district) q = q.eq('district', f.district);
   if (f.neighborhood) q = q.eq('neighborhood_norm', normalizeTr(f.neighborhood));

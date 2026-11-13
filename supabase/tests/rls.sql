@@ -630,3 +630,130 @@ begin
 
   raise exception 'LISTING SIDES TESTS PASSED';
 end $$;
+
+-- Sektörden Haberler: approved members read, only admins write.
+do $$
+declare
+  a_id uuid := gen_random_uuid(); m_id uuid := gen_random_uuid(); p_id uuid := gen_random_uuid();
+  n int;
+begin
+  insert into auth.users (id, email) values (a_id, 'a19@t.test'), (m_id, 'm19@t.test'), (p_id, 'p19@t.test');
+  update public.profiles set role = 'admin', status = 'approved' where id = a_id;
+  update public.profiles set status = 'approved' where id = m_id;
+  insert into public.news (title, body) values ('Faiz kararı', 'Konut kredisi faizleri...');
+
+  perform set_config('request.jwt.claims', json_build_object('sub', m_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.news; assert n = 1, 'approved member reads news';
+  begin
+    insert into public.news (title, body) values ('x', 'y');
+    raise exception 'member inserted news';
+  exception when insufficient_privilege then null; end;
+  update public.news set title = 'hack'; get diagnostics n = row_count; assert n = 0, 'member cannot update news';
+  delete from public.news; get diagnostics n = row_count; assert n = 0, 'member cannot delete news';
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', p_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.news; assert n = 0, 'pending member reads no news';
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', a_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into public.news (title, body, image_url) values ('Yeni yönetmelik', 'Detaylar...', 'https://example.com/a.jpg');
+  select count(*) into n from public.news; assert n = 2, 'admin inserted news';
+  update public.news set title = 'Güncel' where title = 'Yeni yönetmelik'; get diagnostics n = row_count; assert n = 1, 'admin updates news';
+  delete from public.news where title = 'Güncel'; get diagnostics n = row_count; assert n = 1, 'admin deletes news';
+  reset role;
+
+  raise exception 'NEWS TESTS PASSED';
+end $$;
+
+-- Kurumsal content: members read, only admins write; page keys and video links are validated.
+do $$
+declare
+  a_id uuid := gen_random_uuid(); m_id uuid := gen_random_uuid(); p_id uuid := gen_random_uuid();
+  n int;
+begin
+  insert into auth.users (id, email) values (a_id, 'a20@t.test'), (m_id, 'm20@t.test'), (p_id, 'p20@t.test');
+  update public.profiles set role = 'admin', status = 'approved' where id = a_id;
+  update public.profiles set status = 'approved' where id = m_id;
+  insert into public.site_pages (key, body) values ('vizyon', 'Vizyonumuz...');
+  insert into public.trainings (title, video_url, note) values ('Sözleşme', 'https://youtu.be/abc.def', 'Not');
+
+  perform set_config('request.jwt.claims', json_build_object('sub', m_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.site_pages; assert n = 1, 'member reads pages';
+  select count(*) into n from public.trainings; assert n = 1, 'member reads trainings';
+  begin insert into public.site_pages (key, body) values ('misyon', 'x'); raise exception 'member wrote a page';
+  exception when insufficient_privilege then null; end;
+  begin insert into public.trainings (title) values ('x'); raise exception 'member wrote a training';
+  exception when insufficient_privilege then null; end;
+  update public.site_pages set body = 'hack'; get diagnostics n = row_count; assert n = 0, 'member cannot edit pages';
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', p_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.site_pages; assert n = 0, 'pending member reads no pages';
+  select count(*) into n from public.trainings; assert n = 0, 'pending member reads no trainings';
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', a_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into public.site_pages (key, body) values ('misyon', 'Misyonumuz...');
+  update public.site_pages set body = 'Yeni vizyon' where key = 'vizyon'; get diagnostics n = row_count; assert n = 1, 'admin edits a page';
+  begin insert into public.site_pages (key, body) values ('baska', 'x'); raise exception 'unknown page key accepted';
+  exception when check_violation then null; end;
+  begin insert into public.trainings (title, video_url) values ('x', 'javascript:alert(1)'); raise exception 'bad link accepted';
+  exception when check_violation then null; end;
+  insert into public.trainings (title) values ('Notlu eğitim');
+  delete from public.trainings where title = 'Notlu eğitim'; get diagnostics n = row_count; assert n = 1, 'admin deletes a training';
+  reset role;
+
+  raise exception 'SITE CONTENT TESTS PASSED';
+end $$;
+
+-- Date of birth: stored privately at signup, readable only by the member and admins.
+do $$
+declare
+  a_id uuid := gen_random_uuid(); m_id uuid := gen_random_uuid(); o_id uuid := gen_random_uuid();
+  bad1 uuid := gen_random_uuid(); bad2 uuid := gen_random_uuid(); none uuid := gen_random_uuid();
+  n int; d date;
+begin
+  insert into auth.users (id, email, raw_user_meta_data) values
+    (m_id, 'm21@t.test', '{"full_name":"M","birth_date":"1990-05-07"}'::jsonb),
+    (bad1, 'b21@t.test', '{"full_name":"B","birth_date":"not a date"}'::jsonb),
+    (bad2, 'c21@t.test', '{"full_name":"C","birth_date":"2999-01-01"}'::jsonb),
+    (none, 'n21@t.test', '{"full_name":"N"}'::jsonb),
+    (a_id, 'a21@t.test', '{}'::jsonb),
+    (o_id, 'o21@t.test', '{}'::jsonb);
+  select birth_date into d from public.profile_private where member_id = m_id; assert d = date '1990-05-07', 'valid birth date stored';
+  select count(*) into n from public.profile_private where member_id in (bad1, bad2, none); assert n = 0, 'invalid or missing birth dates leave no row and do not break signup';
+  select count(*) into n from public.profiles where id in (bad1, bad2, none); assert n = 3, 'profiles are created even with bad birth dates';
+  update public.profiles set role = 'admin', status = 'approved' where id = a_id;
+  update public.profiles set status = 'approved' where id in (m_id, o_id);
+
+  perform set_config('request.jwt.claims', json_build_object('sub', m_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.profile_private; assert n = 1, 'member sees only their own birth date';
+  update public.profile_private set birth_date = date '1991-06-08' where member_id = m_id; get diagnostics n = row_count; assert n = 1, 'member updates own birth date';
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', o_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.profile_private; assert n = 0, 'another member sees nobody''s birth date';
+  update public.profile_private set birth_date = date '2000-01-01'; get diagnostics n = row_count; assert n = 0, 'another member cannot change it';
+  insert into public.profile_private (member_id, birth_date) values (o_id, date '1985-03-03');
+  begin
+    insert into public.profile_private (member_id, birth_date) values (a_id, date '1985-03-03');
+    raise exception 'member inserted a row for someone else';
+  exception when insufficient_privilege then null; end;
+  reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', a_id, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.profile_private; assert n = 2, 'admin sees all birth dates';
+  reset role;
+
+  raise exception 'BIRTH DATE TESTS PASSED';
+end $$;

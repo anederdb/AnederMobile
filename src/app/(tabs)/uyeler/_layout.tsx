@@ -10,8 +10,6 @@ export default function Layout() {
     <Stack screenOptions={subScreenOptions('/uyeler')}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="[id]" options={{ title: t.members.title }} />
-      <Stack.Screen name="hakkimizda/index" options={{ title: t.about.entry }} />
-      <Stack.Screen name="hakkimizda/[key]" options={{ title: t.about.entry }} />
     </Stack>
   );
 }

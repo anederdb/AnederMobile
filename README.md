@@ -40,6 +40,15 @@ Registration only runs on a real phone and needs a few one-time setup steps (it 
 6. **Commit `app.json`:** the EAS `projectId`/`owner` edits are still uncommitted; push needs `projectId`.
 7. **Placeholders to replace with real text:** Başkan Mesajı and Hakkımızda (`src/i18n/tr.ts`, `about`), Kullanım Şartları and Aydınlatma Metni (`legal`).
 
+## Setting up feedback round 3 (one time)
+
+1. **Database:** run `supabase/migrations/0015` to `0021` in order in the SQL editor (profile photo, offer image, RSVPs, listing sides, news, Kurumsal content, birth date). Then run the matching test blocks at the end of `supabase/tests/rls.sql` (success = the `... PASSED` exception message).
+2. **Edge Function:** redeploy `send-email` (the footer now explains how to turn e-mails off in the app) and `delete-account`.
+3. **Content:** an admin fills in Profil > Yönetim > *Kurumsal İçerik* (Hakkımızda, Vizyon, Misyon, Başkan Mesajı) and *Eğitimleri Yönet*; until then members see template text. Post the first items in *Haberleri Yönet*.
+4. **Legal texts are drafts** (`src/i18n/legalTexts.ts`): KVKK Aydınlatma, Açık Rıza and Kullanım Şartları must be replaced or approved by ANEDER's counsel before real use.
+5. **Later (needs the website):** an unsubscribe link inside e-mails. For now members switch e-mails off in Profil > E-posta bildirimleri.
+6. **New build:** everything above in the app needs a fresh EAS build.
+
 ## Releasing
 
 See `docs/RELEASING.md` for building test and production versions for Android and iOS with EAS.

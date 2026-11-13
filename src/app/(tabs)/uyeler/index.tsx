@@ -6,7 +6,7 @@ import { Text, View } from 'react-native';
 import { Avatar } from '@/components/Avatar';
 import { Screen } from '@/components/Screen';
 import { TitleLabel } from '@/components/TitleLabel';
-import { Card, EmptyState, Field, ListGroup, ListRow, Skeleton } from '@/components/ui';
+import { Card, EmptyState, Field, Skeleton } from '@/components/ui';
 import { t } from '@/i18n/tr';
 import { matchesMember } from '@/lib/memberSearch';
 import { supabase } from '@/lib/supabase';
@@ -44,9 +44,6 @@ export default function Members() {
   return (
     <Screen>
       <Text style={type.display}>{t.members.title}</Text>
-      <ListGroup>
-        <ListRow icon="information-circle-outline" title={t.about.entry} onPress={() => router.push('/uyeler/hakkimizda')} />
-      </ListGroup>
       <Field label={t.members.search} value={query} onChangeText={setQuery} autoCapitalize="none" />
       {rows === null ? (
         <>

@@ -6,6 +6,7 @@ import {
   Animated,
   Pressable,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -253,6 +254,37 @@ export function ListGroup({ children }: { children: ReactNode }) {
           {row}
         </View>
       ))}
+    </View>
+  );
+}
+
+/** A labelled on/off switch with a short description underneath (settings). */
+export function SwitchRow({
+  label,
+  description,
+  value,
+  onValueChange,
+  disabled,
+}: {
+  label: string;
+  description?: string;
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.xs }}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={type.heading}>{label}</Text>
+        {description ? <Text style={type.caption}>{description}</Text> : null}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        disabled={disabled}
+        accessibilityLabel={label}
+        trackColor={{ true: colors.primary, false: colors.border }}
+      />
     </View>
   );
 }

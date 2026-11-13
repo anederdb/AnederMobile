@@ -19,6 +19,7 @@ export default function ListingForm() {
   const router = useRouter();
   const { profile } = useSession();
 
+  const [side, setSide] = useState<'al' | 'ver'>('al');
   const [kind, setKind] = useState<'satilik' | 'kiralik'>('satilik');
   const [title, setTitle] = useState('');
   const [district, setDistrict] = useState('');
@@ -54,6 +55,7 @@ export default function ListingForm() {
       .then(({ data }) => {
         const l = data as Listing | null;
         if (!l) return;
+        setSide(l.side);
         setKind(l.type);
         setTitle(l.title);
         setDistrict(l.district ?? '');
@@ -87,6 +89,7 @@ export default function ListingForm() {
         if (!parsedLink.ok) return setError(t.listings.invalidLink);
         setBusy(true);
         const row = {
+          side,
           type: kind,
           title: title.trim(),
           district: district || null,
@@ -106,12 +109,18 @@ export default function ListingForm() {
         if (result.error) return setError(t.common.error);
         router.replace({ pathname: '/talepler/[id]', params: { id: result.data.id } });
       }),
-    [title, minPrice, maxPrice, area, link, kind, district, neighborhood, rooms, description, firmId, id, profile, router],
+    [title, minPrice, maxPrice, area, link, side, kind, district, neighborhood, rooms, description, firmId, id, profile, router],
   );
 
   return (
     <Screen>
       <Text style={type.display}>{id ? t.listings.edit : t.listings.add}</Text>
+
+      <Text style={type.label}>{t.listings.kindQuestion}</Text>
+      <View style={{ flexDirection: 'row', gap: space.sm }}>
+        <Chip label={t.listings.sideAl} selected={side === 'al'} onPress={() => setSide('al')} />
+        <Chip label={t.listings.sideVer} selected={side === 'ver'} onPress={() => setSide('ver')} />
+      </View>
 
       <Text style={type.label}>{t.listings.type}</Text>
       <View style={{ flexDirection: 'row', gap: space.sm }}>
@@ -122,7 +131,7 @@ export default function ListingForm() {
       <Field label={t.listings.titleField} value={title} onChangeText={setTitle} autoCapitalize="sentences" />
 
       <Text style={type.label}>{t.listings.district}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: space.sm }}>
         {ANKARA_DISTRICTS.map((d) => (
           <Chip key={d} label={d} selected={district === d} onPress={() => setDistrict(district === d ? '' : d)} />
         ))}
@@ -140,7 +149,7 @@ export default function ListingForm() {
       </View>
 
       <Text style={type.label}>{t.listings.rooms}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: space.sm }}>
         <Chip label={t.listings.selectAll} selected={allRooms} onPress={() => setRooms(allRooms ? [] : [...ROOM_OPTIONS])} />
         {ROOM_OPTIONS.map((r) => (
           <Chip key={r} label={r} selected={rooms.includes(r)} onPress={() => toggleRoom(r)} />
@@ -162,7 +171,7 @@ export default function ListingForm() {
       {firms.length > 0 ? (
         <>
           <Text style={type.label}>{t.listings.firm}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: space.sm }}>
             {firms.map((f) => (
               <Chip key={f.id} label={f.name} selected={firmId === f.id} onPress={() => setFirmId(firmId === f.id ? null : f.id)} />
             ))}
